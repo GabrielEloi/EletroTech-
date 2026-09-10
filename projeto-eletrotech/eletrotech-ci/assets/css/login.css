@@ -1,0 +1,161 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+
+
+#body-login{
+background-color: #282828;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;   
+  min-height: 100vh;       
+  margin: 0;
+  gap: 30px;    }
+
+header {
+  background-color: #282828;
+  width: 100%;
+  height: 80px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: none;
+}
+
+header img {
+  max-width: 200px;        
+  height: auto;           
+}
+
+
+.container-login {
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+  padding: 50px 80px;      
+  box-shadow: 5px 4px 3px 0 black;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 400px;        
+  box-sizing: border-box;  
+}
+
+.container-login h1 {
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+#inputs {
+  display: flex;
+  text-align: center;
+  justify-content: center;  
+  flex-direction: column;
+  gap: 10px;
+}
+
+#jaTemConta{
+  color: #282828;
+  text-decoration: none;
+  display: flex;
+  justify-content: center;
+}
+
+#jaTemConta:hover{
+  color: #fbd814 ;
+  text-decoration: none;
+  display: flex;
+  justify-content: center;
+  transition: color 0.3s ease;
+}
+
+#inputs input {
+  border: none;
+  border-bottom: 1px solid #000;
+  background: transparent;
+  outline: none;
+}
+
+.demo-block .ml-login {
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+}
+
+.ml-login h1 {
+  margin-bottom: 24px;
+  font-size: 24px;
+}
+
+.login-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+}
+
+.login-inputs label {
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: #333;
+}
+
+.login-inputs input {
+  border: none;
+  border-bottom: 1px solid #ccc;
+  padding: 8px 0;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  width: 100%;
+}
+
+.login-inputs input:focus {
+  border-bottom: 2px solid #FBD813;
+}
+
+.login-inputs .ml-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.login-inputs .ml-input-wrapper input {
+  width: 100%;
+  padding-right: 30px;
+}
+
+.ml-login,
+.ml-form {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  background-color: #ffffff;
+  padding: 30px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.ml-login, .ml-form {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;   
+  background-color: #ffffff; 
+  padding: 30px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+}
