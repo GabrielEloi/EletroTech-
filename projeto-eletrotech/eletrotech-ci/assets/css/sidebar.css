@@ -1,0 +1,353 @@
+.sidebar {
+  width: 220px;
+  min-height: 100vh;
+  background: #1c2b22;
+  display: flex;
+  flex-direction: column;
+  padding: 28px 20px;
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+
+.sidebar-header {
+  margin-bottom: 36px;
+}
+
+.sidebar-label {
+  font-family: "Lora", serif;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #7a9e86;
+  margin-bottom: 4px;
+}
+
+.sidebar-title {
+  font-family: "Lora", serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #f0ebe3;
+}
+
+.divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin-bottom: 24px;
+}
+
+nav {
+  flex: 1;
+}
+
+.nav-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #9dbfa8;
+  font-size: 14px;
+  font-weight: 500;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.nav-item i,
+.nav-item .material-symbols-outlined {
+  font-size: 16px;
+  width: 16px;
+  text-align: center;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f0ebe3;
+}
+
+.nav-item.active {
+  background: #2f4a38;
+  color: #c8e6c9;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.theme-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #5a7a64;
+  margin-bottom: 10px;
+}
+
+.theme-toggle {
+  display: flex;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  padding: 3px;
+  gap: 3px;
+}
+
+.theme-btn {
+  flex: 1;
+  padding: 6px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #7a9e86;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.theme-btn:hover {
+  color: #f0ebe3;
+}
+
+.theme-btn.active {
+  background: #2f4a38;
+  color: #c8e6c9;
+}
+
+.theme-btn i {
+  font-size: 13px;
+}
+
+/* ── Tema Claro ── */
+
+.sidebar {
+  position: fixed !important;
+  top: 80px !important;
+  left: 0 !important;
+  height: calc(100vh - 80px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: visible !important;
+  background-color: white !important;
+  border-right: 1px solid #e0e0e0;
+}
+
+.sidebar-footer {
+  flex-shrink: 0;
+  padding: 20px;
+  border-top: 1px solid #e0e0e0;
+  background-color: white;
+}
+
+.theme-toggle {
+  background: #f0f0f0 !important;
+  border-radius: 6px;
+  padding: 3px;
+  display: flex;
+  gap: 3px;
+}
+
+.theme-btn {
+  flex: 1;
+  padding: 6px;
+  border: none;
+  border-radius: 4px;
+  background: transparent !important;
+  color: #666 !important;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.theme-btn.active {
+  background: white !important;
+  color: #3adc92 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.theme-btn:hover {
+  color: #333 !important;
+}
+
+/* ── Tema Escuro ── */
+body.dark-theme {
+  background-color: #121212;
+  color: #f0ebe3;
+}
+
+body.dark-theme .demo-wrapper {
+  background-color: #121212;
+}
+
+body.dark-theme header {
+  background-color: #1c2b22;
+}
+
+body.dark-theme .header-nav ul li a {
+  color: #f0ebe3;
+}
+
+body.dark-theme .demo-block,
+body.dark-theme .demo-block-form {
+  background-color: #1c2b22;
+  color: #f0ebe3;
+}
+
+body.dark-theme .section-title {
+  border-bottom-color: #2f4a38;
+}
+
+body.dark-theme .ml-input-field,
+body.dark-theme .login-inputs input,
+body.dark-theme .demo-block-form .div-input input {
+  color: #f0ebe3;
+  border-bottom-color: #3adc92;
+}
+
+body.dark-theme .ml-label,
+body.dark-theme .login-inputs label,
+body.dark-theme .demo-block-form .div-input label {
+  color: #9dbfa8;
+}
+
+body.dark-theme .card-title {
+  color: #f0ebe3;
+}
+
+body.dark-theme .sidebar {
+  background-color: #1c2b22 !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.dark-theme .sidebar-footer {
+  background-color: #1c2b22 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.dark-theme .theme-toggle {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+body.dark-theme .theme-btn {
+  color: #9dbfa8 !important;
+}
+
+body.dark-theme .theme-btn.active {
+  background: #2f4a38 !important;
+  color: #c8e6c9 !important;
+  box-shadow: none;
+}
+
+body.dark-theme .theme-btn:hover {
+  color: #f0ebe3 !important;
+}
+
+/* sidebar altura e scroll */
+.sidebar {
+  top: 80px !important;
+  height: calc(100vh - 80px) !important;
+  overflow-y: auto;
+}
+
+/*  sidebar header branco */
+.sidebar-header {
+  display: none;
+}
+
+.sidebar {
+  position: fixed !important;
+  top: 80px !important;
+  left: 0 !important;
+  height: calc(100vh - 80px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: visible !important;
+}
+
+.sidebar nav {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.sidebar .sidebar-footer {
+  flex-shrink: 0;
+  margin-top: 0 !important;
+  position: sticky;
+  bottom: 0;
+  padding: 20px;
+}
+
+.sidebar-footer {
+  flex-shrink: 0;
+  padding: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.theme-toggle {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-radius: 6px;
+  padding: 3px;
+  display: flex;
+  gap: 3px;
+}
+
+.theme-btn {
+  flex: 1;
+  padding: 6px;
+  border: none;
+  border-radius: 4px;
+  background: transparent !important;
+  color: #9dbfa8 !important;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.theme-btn.active {
+  background: #2f4a38 !important;
+  color: #c8e6c9 !important;
+}
+
+.theme-btn:hover {
+  color: #f0ebe3 !important;
+}
+
+.sidebar {
+  top: 80px !important;
+  height: calc(100vh - 80px) !important;
+}
+
+/* Scroll  */
+html {
+  scroll-behavior: smooth;
+}
