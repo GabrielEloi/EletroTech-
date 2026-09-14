@@ -1,0 +1,194 @@
+body {
+  background-color: #3c3b3b;
+  color: white;
+  font-family: 'DM Sans', sans-serif;
+}
+
+nav.navbar.navbar-custom {
+  background-color: #282828;
+  padding-top: 15px;
+  padding-bottom: 15px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+nav.navbar.navbar-custom .navbar-brand img {
+  max-height: 60px;
+  width: auto;
+  object-fit: contain;
+}
+
+nav.navbar.navbar-custom ul.navbar-nav .nav-link {
+  color: #ffffff;
+  font-weight: 500;
+  font-size: 16px;
+  padding: 8px 16px;
+  transition: all 0.3s ease;
+}
+
+nav.navbar.navbar-custom ul.navbar-nav .nav-link:hover,
+nav.navbar.navbar-custom ul.navbar-nav .nav-link.active {
+  color: #282828;
+  background-color: #FBD814;
+  border-radius: 6px;
+}
+
+nav.navbar.navbar-custom .navbar-toggler {
+  border-color: #FBD814;
+  padding: 8px;
+}
+
+nav.navbar.navbar-custom .navbar-toggler-icon {
+  background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3e%3cpath stroke='%23FBD814' stroke-width='2.5' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+.page-header {
+  margin-top: 1.5rem;
+  margin-bottom: 2rem;
+  border-left: 5px solid #FBD814;
+  padding-left: 15px;
+}
+
+.page-header h1 {
+  font-weight: 700;
+  font-size: 28px;
+  margin: 0;
+}
+
+.page-header p {
+  color: #a0a0a0;
+  margin: 5px 0 0 0;
+  font-size: 15px;
+}
+
+.painel {
+  background-color: #1f1f1f;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid #333;
+  margin-bottom: 1.5rem;
+}
+
+.painel-destaque {
+  border: 1px solid #FBD814;
+}
+
+.tabela-eletrotech {
+  color: #eee;
+}
+
+.tabela-eletrotech thead th {
+  color: #FBD814;
+  border-bottom: 2px solid #FBD814;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tabela-eletrotech tbody tr {
+  border-bottom: 1px solid #333;
+}
+
+.tabela-eletrotech tbody tr:hover {
+  background-color: rgba(251, 216, 20, 0.06);
+}
+
+.btn-eletrotech {
+  background-color: #FBD814;
+  color: #282828;
+  border: none;
+  font-weight: bold;
+  border-radius: 6px;
+  transition: 0.2s;
+}
+
+.btn-eletrotech:hover {
+  background-color: #ffffff;
+  color: #282828;
+}
+
+.badge-status-aberta { background-color: #f8a81e; color: #282828; }
+.badge-status-fechada { background-color: #4ade80; color: #282828; }
+.badge-status-solicitada { background-color: #FBD814; color: #282828; }
+.badge-status-negada { background-color: #f87171; color: #282828; }
+
+.form-control, .form-select {
+  background-color: #282828;
+  color: #fff;
+  border: 1px solid #555;
+}
+
+.form-control:focus, .form-select:focus {
+  background-color: #282828;
+  color: #fff;
+  border-color: #FBD814;
+  box-shadow: 0 0 0 0.2rem rgba(251, 216, 20, 0.25);
+}
+
+.form-control::placeholder {
+  color: #999;
+}
+
+label {
+  color: #ccc;
+}
+
+.card-eletrotech {
+  background-color: #1f1f1f;
+  border-radius: 12px;
+  padding: 30px 20px;
+  text-align: center;
+  border-bottom: 4px solid #FBD814;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  height: 100%;
+}
+
+.card-eletrotech:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+  background-color: #242424;
+}
+
+.card-eletrotech .icon-metric {
+  font-size: 40px;
+  color: #FBD814;
+  margin-bottom: 15px;
+}
+
+.card-eletrotech .metric-value {
+  font-size: 36px;
+  font-weight: 700;
+  color: white;
+  line-height: 1;
+  margin-bottom: 5px;
+}
+
+.filtro-mes {
+  background-color: #282828;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #FBD814;
+  margin: 1rem 0 0.5rem 0;
+  display: flex;
+  align-items: end;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.filtro-mes label {
+  color: #FBD814;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.filtro-mes input,
+.filtro-mes button {
+  height: 40px;
+}
+
+.card-eletrotech .metric-label {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #ccc;
+  font-weight: 600;
+}

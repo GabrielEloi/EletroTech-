@@ -1,0 +1,4 @@
+/* Estilos globais mínimos - o tema visual completo está em ./assets/css */
+* {
+  box-sizing: border-box;
+}

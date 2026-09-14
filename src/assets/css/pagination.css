@@ -1,0 +1,38 @@
+.rodape-paginacao {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin: 20px 0 40px 0;
+}
+
+.rodape-paginacao .contagem {
+  color: #a0a0a0;
+  font-size: 14px;
+}
+
+.rodape-paginacao .page-link {
+  background-color: #282828;
+  border-color: #555;
+  color: #ffffff;
+}
+
+.rodape-paginacao .page-link:hover {
+  background-color: #FBD814;
+  border-color: #FBD814;
+  color: #282828;
+}
+
+.rodape-paginacao .page-item.active .page-link {
+  background-color: #FBD814;
+  border-color: #FBD814;
+  color: #282828;
+  font-weight: bold;
+}
+
+@media print {
+  .rodape-paginacao {
+    display: none;
+  }
+}
