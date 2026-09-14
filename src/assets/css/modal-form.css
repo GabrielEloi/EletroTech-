@@ -1,0 +1,234 @@
+.modal-content.eletrotech-modal {
+  background-color: #282828;
+  color: white;
+  border: 1px solid #FBD814;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.modal-content.eletrotech-modal .modal-header {
+  border-bottom: 1px solid rgba(251, 216, 20, 0.3);
+}
+
+.modal-content.eletrotech-modal .modal-title {
+  color: #FBD814;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 1.1rem;
+}
+
+.btn-close-white {
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+form.eletrotech-form {
+  display: flex;
+  flex-direction: column;
+}
+
+form.eletrotech-form label {
+  color: #ccc;
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+
+form.eletrotech-form label.required::after {
+  content: ' *';
+  color: #FBD814;
+}
+
+form.eletrotech-form input,
+form.eletrotech-form select,
+form.eletrotech-form textarea {
+  border: none;
+  border-bottom: 1px solid #777;
+  background: transparent;
+  color: white;
+  padding: 8px 0;
+  width: 100%;
+  outline: none;
+  margin-bottom: 20px;
+  font-size: 14px;
+  transition: border-bottom 0.3s;
+}
+
+form.eletrotech-form input:focus,
+form.eletrotech-form select:focus,
+form.eletrotech-form textarea:focus {
+  border-bottom: 2px solid #FBD814;
+}
+
+form.eletrotech-form .btn-submit {
+  background-color: #ebca1e;
+  color: #282828;
+  border: none;
+  border-radius: 30px;
+  padding: 12px 20px;
+  font-weight: bold;
+  text-transform: uppercase;
+  transition: 0.3s;
+  margin-top: 10px;
+}
+
+form.eletrotech-form .btn-submit:hover {
+  background-color: #ffffff;
+}
+
+#acoes_id {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  gap: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+#acoes_id > button,
+#acoes_id a button {
+  background-color: #ebca1e;
+  color: #282828;
+  border-radius: 30px;
+  padding: 10px 20px;
+  border: none;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+#acoes_id > button:hover,
+#acoes_id a button:hover {
+  background-color: #ffffff;
+  color: #282828;
+}
+
+table.custom-table,
+table.custom-table th,
+table.custom-table td {
+  border-color: #FBD814;
+  vertical-align: middle;
+}
+
+table.custom-table thead th {
+  color: #FBD814;
+  font-size: 1.05rem;
+}
+
+table.custom-table td.empty-state {
+  text-align: center;
+  color: #a0a0a0;
+  padding: 2rem;
+  font-style: italic;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.alert-success {
+  background-color: transparent !important;
+  color: #198754 !important;
+  border: 1px solid #198754 !important;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  animation: fadeIn 0.5s ease-out;
+  font-weight: 500;
+}
+
+.alert-danger {
+  background-color: transparent !important;
+  color: #dc3545 !important;
+  border: 1px solid #dc3545 !important;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  animation: fadeIn 0.5s ease-out;
+  font-weight: 500;
+}
+
+/* Formulário de permissões (Usuários) */
+.switch-admin {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.switch-admin input {
+  width: 18px;
+  height: 18px;
+  accent-color: #FBD814;
+}
+
+.switch-admin label {
+  margin: 0;
+  font-size: 13px;
+  color: #eee;
+  text-transform: none;
+  font-weight: 500;
+}
+
+.permissoes-bloco {
+  border: 1px solid rgba(251, 216, 20, 0.25);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+}
+
+.permissoes-bloco .titulo {
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: #FBD814;
+  margin-bottom: 10px;
+}
+
+.permissoes-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 14px;
+}
+
+.permissoes-grid .perm-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.permissoes-grid input {
+  width: 16px;
+  height: 16px;
+  accent-color: #FBD814;
+}
+
+.permissoes-grid label {
+  margin: 0;
+  font-size: 13px;
+  color: #eee;
+  text-transform: none;
+  font-weight: 500;
+}
+
+.permissoes-bloco.desativado {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.permissoes-aviso {
+  font-size: 12px;
+  color: #FBD814;
+  margin-bottom: 18px;
+}
+
+form.eletrotech-form label.campo {
+  color: #ccc;
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+  display: block;
+}
