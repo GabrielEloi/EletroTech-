@@ -1,0 +1,5 @@
+.env
+node_modules/
+.DS_Store
+eletrotech-ci/assets/uploads/os/*
+!eletrotech-ci/assets/uploads/os/index.html
