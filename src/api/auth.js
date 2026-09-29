@@ -1,8 +1,8 @@
-import api, { toFormBody } from "./client";
+import api from "./client";
 
 // POST /auth/entrar { nome, senha }
 export function login(nome, senha) {
-  return api.post("/auth/entrar", toFormBody({ nome, senha }));
+  return api.post("/auth/entrar", { nome, senha });
 }
 
 // GET /auth/sair
