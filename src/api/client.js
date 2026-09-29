@@ -2,11 +2,11 @@ import axios from "axios";
 
 // Base da API - aponta para o backend CodeIgniter (PHP) do EletroTech.
 // Configure em um arquivo .env na raiz: VITE_API_URL=http://seu-servidor/index.php
-const baseURL = import.meta.env.VITE_API_URL || "/index.php";
+const baseURL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const api = axios.create({
   baseURL,
-  withCredentials: true, // necessário para manter a sessão PHP (cookie PHPSESSID)
+  withCredentials: true,
 });
 
 // Helper para enviar dados como application/x-www-form-urlencoded,
