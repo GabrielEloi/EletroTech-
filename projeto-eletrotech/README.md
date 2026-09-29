@@ -2,6 +2,8 @@
 
 ## Visão Geral e Arquitetura
 
+teste
+
 O EletroTech é uma aplicação web de gestão operacional voltada para empresas de soluções elétricas. O sistema centraliza o controle de usuários, eletricistas, produtos, metas, ordens de serviço, movimentações de estoque e um assistente de IA, oferecendo um back-office robusto para operação técnica e administrativa.
 
 Após as melhorias recentes, o projeto passou a oferecer uma base mais modular, regras de negócio mais consistentes e uma suíte de testes estruturada para validar os principais fluxos de persistência e integração com o banco de dados.
