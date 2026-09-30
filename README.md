@@ -65,3 +65,7 @@ src/
 ## Permissões
 
 O controle de acesso replica `permissoes_helper.php`: administradores veem tudo; demais usuários só veem os módulos liberados (`menu`, `ordemServico`, `checklist`, `produtos`, `baixas`, `metas`, `eletricistas`), guardados em `AuthContext`.
+
+
+
+Testando

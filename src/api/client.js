@@ -1,8 +1,7 @@
 import axios from "axios";
 
-// Base da API - aponta para o backend CodeIgniter (PHP) do EletroTech.
-// Configure em um arquivo .env na raiz: VITE_API_URL=http://seu-servidor/index.php
-const baseURL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+// API REST Node/Express. Configure VITE_API_URL sem a barra final.
+const baseURL = import.meta.env.VITE_API_URL || "http://localhost:3100/api/v1";
 
 const api = axios.create({
   baseURL,
@@ -24,6 +23,12 @@ export function toFormBody(data) {
 }
 
 api.interceptors.request.use((config) => {
+  try {
+    const usuario = JSON.parse(localStorage.getItem("eletrotech_usuario"));
+    if (usuario?.accessToken) config.headers.Authorization = `Bearer ${usuario.accessToken}`;
+  } catch {
+    // A requisição de login continua funcionando sem armazenamento local.
+  }
   if (config.data instanceof URLSearchParams) {
     config.headers["Content-Type"] = "application/x-www-form-urlencoded";
   }
@@ -31,7 +36,14 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // O backend usa { data, meta? } como envelope padrão; preserva o contrato
+    // simples que as páginas React já consomem via `const { data } = ...`.
+    if (response.data && Object.prototype.hasOwnProperty.call(response.data, "data")) {
+      response.data = response.data.data;
+    }
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401 || error.response?.status === 403) {
       // Sessão expirada/sem permissão - deixa a tela decidir o redirecionamento.

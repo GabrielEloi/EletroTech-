@@ -7,25 +7,25 @@ export function listarEletricistas() {
 
 // POST /eletricistas/cadastrar { nome, cpf, data_contratacao, senha }
 export function cadastrarEletricista(dados) {
-  return api.post("/eletricistas/cadastrar", toFormBody(dados));
+  return api.post("/eletricistas", toFormBody(dados));
 }
 
 // POST /eletricistas/editar { id, nome, senha }
 export function editarEletricista(dados) {
-  return api.post("/eletricistas/editar", toFormBody(dados));
+  return api.put(`/eletricistas/${dados.id}`, toFormBody(dados));
 }
 
 // GET /eletricistas/demitir/{id}
 export function demitirEletricista(id) {
-  return api.get(`/eletricistas/demitir/${id}`);
+  return api.patch(`/eletricistas/${id}/demissao`);
 }
 
 // GET /eletricistas/reativar/{id}
 export function reativarEletricista(id) {
-  return api.get(`/eletricistas/reativar/${id}`);
+  return api.patch(`/eletricistas/${id}/reativacao`);
 }
 
 // GET /eletricistas/historico_os/{id}
 export function historicoOsEletricista(id) {
-  return api.get(`/eletricistas/historico_os/${id}`);
+  return api.get(`/eletricistas/${id}/ordens-servico`);
 }

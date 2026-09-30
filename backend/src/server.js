@@ -1,13 +1,12 @@
-import dotenv from 'dotenv';
 import app from './app.js';
-import { initializeDatabase } from './config/database.js';
+import { env } from './config/env.js';
+import { pool } from './config/database.js';
 
-dotenv.config();
+const PORT = env.port;
 
-const PORT = Number(process.env.PORT || 3001);
-
-initializeDatabase();
-
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Backend EletroTech rodando na porta ${PORT}`);
 });
+
+async function shutdown() { await pool.end(); server.close(() => process.exit(0)); }
+process.once('SIGINT', shutdown); process.once('SIGTERM', shutdown);
