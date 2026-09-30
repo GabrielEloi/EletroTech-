@@ -7,30 +7,30 @@ export function getLancamentos() {
 
 // POST /lancamentos/abrir { tipo, data_baixa, id_eletricista, observacao }
 export function abrirLancamento(dados) {
-  return api.post("/lancamentos/abrir", toFormBody(dados));
+  return api.post("/lancamentos", toFormBody(dados));
 }
 
 // POST /lancamentos/incluir_item { id_baixa, id_produto, quantidade, valor_unitario }
 export function incluirItemLancamento(dados) {
-  return api.post("/lancamentos/incluir_item", toFormBody(dados));
+  return api.post(`/lancamentos/${dados.id_baixa}/itens`, toFormBody(dados));
 }
 
 // POST /lancamentos/remover_item { id_baixa, id_item }
 export function removerItemLancamento(dados) {
-  return api.post("/lancamentos/remover_item", toFormBody(dados));
+  return api.delete(`/lancamentos/${dados.id_baixa}/itens/${dados.id_item}`);
 }
 
 // POST /lancamentos/finalizar { id_baixa }
 export function finalizarLancamento(idBaixa) {
-  return api.post("/lancamentos/finalizar", toFormBody({ id_baixa: idBaixa }));
+  return api.post(`/lancamentos/${idBaixa}/finalizacao`);
 }
 
 // POST /lancamentos/cancelar { id_baixa }
 export function cancelarLancamento(idBaixa) {
-  return api.post("/lancamentos/cancelar", toFormBody({ id_baixa: idBaixa }));
+  return api.post(`/lancamentos/${idBaixa}/cancelamento`);
 }
 
 // GET /lancamentos/relatorio/{id}
 export function relatorioLancamento(id) {
-  return api.get(`/lancamentos/relatorio/${id}`);
+  return api.get(`/lancamentos/${id}/relatorio`);
 }

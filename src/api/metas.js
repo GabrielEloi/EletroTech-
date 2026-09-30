@@ -7,15 +7,15 @@ export function listarMetas(filtros = {}) {
 
 // POST /metas/cadastrar { eletricista_meta, mes_meta, vlr_meta }
 export function cadastrarMeta(dados) {
-  return api.post("/metas/cadastrar", toFormBody(dados));
+  return api.post("/metas", toFormBody(dados));
 }
 
 // POST /metas/editar { id, vlr_meta }
 export function editarMeta(dados) {
-  return api.post("/metas/editar", toFormBody(dados));
+  return api.put(`/metas/${dados.id}`, toFormBody(dados));
 }
 
 // GET /metas/excluir/{id}
 export function excluirMeta(id) {
-  return api.get(`/metas/excluir/${id}`);
+  return api.delete(`/metas/${id}`);
 }

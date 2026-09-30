@@ -7,15 +7,15 @@ export function listarUsuarios() {
 
 // POST /usuarios/criar { usuario, senha, is_admin, permissoes[], eletricista_id }
 export function criarUsuario(dados) {
-  return api.post("/usuarios/criar", toFormBody(dados));
+  return api.post("/usuarios", toFormBody(dados));
 }
 
 // POST /usuarios/editar { id, usuario, is_admin, permissoes[], senha }
 export function editarUsuario(dados) {
-  return api.post("/usuarios/editar", toFormBody(dados));
+  return api.put(`/usuarios/${dados.id}`, toFormBody(dados));
 }
 
 // GET /usuarios/excluir/{id}
 export function excluirUsuario(id) {
-  return api.get(`/usuarios/excluir/${id}`);
+  return api.delete(`/usuarios/${id}`);
 }

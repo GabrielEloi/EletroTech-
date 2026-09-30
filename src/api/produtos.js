@@ -7,23 +7,23 @@ export function listarProdutos() {
 
 // POST /produtos/cadastrar { nome_produto, vlr_unitario, qtd_estoque }
 export function cadastrarProduto(dados) {
-  return api.post("/produtos/cadastrar", toFormBody(dados));
+  return api.post("/produtos", toFormBody(dados));
 }
 
 // POST /produtos/editar { id, nome_produto, vlr_unitario }
 export function editarProduto(dados) {
-  return api.post("/produtos/editar", toFormBody(dados));
+  return api.put(`/produtos/${dados.id}`, toFormBody(dados));
 }
 
 // GET /produtos/ZerarEstoque/{id}
 export function zerarEstoqueProduto(id) {
-  return api.get(`/produtos/ZerarEstoque/${id}`);
+  return api.post(`/produtos/${id}/zerar-estoque`);
 }
 
 // POST /produtos/aumentarQtdEstoque/{id} { qtd_estoque }
 export function aumentarEstoqueProduto(id, qtdEstoque) {
   return api.post(
-    `/produtos/aumentarQtdEstoque/${id}`,
+    `/produtos/${id}/entrada-estoque`,
     toFormBody({ qtd_estoque: qtdEstoque })
   );
 }

@@ -4,7 +4,7 @@
   "type": "module",
   "main": "src/server.js",
   "scripts": {
-    "dev": "node --watch src/server.js",
+    "dev": "node src/server.js",
     "start": "node src/server.js"
   },
   "dependencies": {
@@ -13,6 +13,13 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
-    "sql.js": "^1.13.0"
+    "multer": "^2.4.0",
+    "mysql2": "^3.24.5",
+    "sql.js": "^1.13.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "supertest": "^7.3.0",
+    "vitest": "^5.0.2"
   }
 }

@@ -30,10 +30,9 @@ export function AuthProvider({ children }) {
     setErro("");
     try {
       const { data } = await authApi.login(nome, senha);
-      // Espera-se que o backend retorne algo como:
-      // { nome, is_admin, permissoes: [...], destino, rotuloDestino }
-      setUsuario(data);
-      return data;
+      const usuario = data.usuario ? { ...data.usuario, accessToken: data.accessToken } : data;
+      setUsuario(usuario);
+      return usuario;
     } catch (e) {
       setErro(
         e.response?.data?.mensagem ||
