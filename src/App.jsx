@@ -17,8 +17,8 @@ import BaixasPage from "./pages/BaixasPage";
 import LancamentosPage from "./pages/LancamentosPage";
 
 function RotaLogin() {
-  const { usuario } = useAuth();
-  if (usuario) return <Navigate to="/home" replace />;
+  const { usuario, ehEletricista } = useAuth();
+  if (usuario) return <Navigate to={ehEletricista ? "/menu" : "/home"} replace />;
   return <LoginPage />;
 }
 

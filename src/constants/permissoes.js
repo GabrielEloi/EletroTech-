@@ -8,3 +8,6 @@ export const PERMISSOES_DISPONIVEIS = {
   metas: "Metas",
   eletricistas: "Eletricistas",
 };
+
+// O perfil vinculado ao eletricista tem somente estes módulos.
+export const PERMISSOES_ELETRICISTA = ["menu", "ordemServico", "metas"];

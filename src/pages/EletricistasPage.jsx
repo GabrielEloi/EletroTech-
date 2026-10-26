@@ -225,7 +225,9 @@ export default function EletricistasPage() {
             value={editando.nome}
             onChange={(e) => setEditando({ ...editando, nome: e.target.value })}
           />
-          <label>Nova senha</label>
+          {/* Uma senha também cria o acesso dos cadastros antigos sem login. */}
+          <label>Senha de acesso (login por CPF)</label>
+          <p className="texto-vazio">Informe uma senha para liberar o primeiro acesso ou atualizar a senha atual.</p>
           <input
             type="password"
             placeholder="Deixe em branco para manter a atual"

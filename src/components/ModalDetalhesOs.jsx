@@ -47,7 +47,8 @@ export default function ModalDetalhesOs({ idOs, aberto, onFechar }) {
     }
   }
 
-  const ordem = dados?.ordem;
+  // A API REST retorna a ordem junto dos materiais e respostas.
+  const ordem = dados?.ordem || (dados?.id ? dados : null);
   const materiais = dados?.materiais || [];
   const respostas = dados?.respostas || [];
   const comentarios = dados?.comentarios || [];

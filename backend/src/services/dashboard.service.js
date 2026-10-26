@@ -1,10 +1,12 @@
-const repo = require('./dashboard.repository');
+import * as repo from '../repository/dashboard.repository.js';
+import { AppError } from '../shared/http.js';
 
 /**
  * user: { id, usuario, nome_exibicao, is_admin, eletricista_id, permissoes }
  * Admin vê tudo; usuário vinculado a eletricista vê só os próprios dados.
  */
 async function obterDashboard(user, { mes } = {}) {
+  if (mes && !/^\d{4}-(0[1-9]|1[0-2])$/.test(mes)) throw new AppError(422, 'Mês inválido, use YYYY-MM.', 'VALIDATION_ERROR');
   const ehAdmin = !!user.is_admin;
   const eletricistaId = user.eletricista_id ? Number(user.eletricista_id) : null;
   const filtro = !ehAdmin && eletricistaId ? eletricistaId : null;
@@ -19,8 +21,8 @@ async function obterDashboard(user, { mes } = {}) {
     ]);
 
   const data = {
-    perfil: filtro ? 'eletricista' : 'admin',
-    usuario: user.nome_exibicao || user.usuario || user.nome,
+    perfil: user.perfil,
+    usuario: user.nome || user.usuario,
     mesFiltro: mes || '',
     totais,
     graficoEletricista,
@@ -44,4 +46,4 @@ async function obterDashboard(user, { mes } = {}) {
   return data;
 }
 
-module.exports = { obterDashboard };
+export { obterDashboard };
