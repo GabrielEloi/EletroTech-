@@ -1,7 +1,0 @@
-{
-  "dependencies": {
-    "bootstrap": "^5.3.8",
-    "js-lib": "github:lucasfporto1/lib-js",
-    "ml-ui": "github:lucasfporto1/minha-lib-ui"
-  }
-}
