@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import * as metasApi from "../api/metas";
-import * as eletricistasApi from "../api/eletricistas";
 import Modal from "../components/Modal";
 import Pagination from "../components/Pagination";
 import { Carregando, ErroCarregamento, ListaVazia } from "../components/EstadoLista";
@@ -43,9 +42,9 @@ export default function MetasPage() {
 
   useEffect(() => {
     carregar();
-    // A consulta da equipe só é necessária para quem administra as metas.
-    if (!ehEletricista) eletricistasApi
-      .listarEletricistas()
+    // Atribui metas usando apenas ID e nome dos eletricistas ativos.
+    if (!ehEletricista) metasApi
+      .opcoesMetas()
       .then((res) => {
         const lista = res.data?.eletricistas ?? res.data ?? [];
         setEletricistasAtivos(lista.filter((e) => !e.data_demissao));

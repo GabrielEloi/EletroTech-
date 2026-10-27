@@ -22,7 +22,7 @@ const STATUS_BADGE = {
 };
 
 export default function OrdemServicoPage() {
-  const { ehAdmin } = useAuth();
+  const { ehAdmin, ehSupervisor } = useAuth();
   const { notificar } = useNotificacao();
 
   const [dadosPagina, setDadosPagina] = useState(null);
@@ -63,7 +63,8 @@ export default function OrdemServicoPage() {
   const produtosDisponiveis = dadosPagina?.produtosDisponiveis ?? [];
   const checklistInicio = dadosPagina?.checklistInicio;
   const checklistFim = dadosPagina?.checklistFim;
-  const podeSolicitar = dadosPagina?.podeSolicitar ?? ehAdmin;
+  // Supervisores também atribuem novas ordens de serviço à equipe.
+  const podeSolicitar = dadosPagina?.podeSolicitar ?? (ehAdmin || ehSupervisor);
 
 // A paginação e o status são aplicados na API após o filtro de propriedade.
   const totalRows = dadosPagina?.paginacao?.total ?? 0;

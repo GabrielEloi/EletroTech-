@@ -57,9 +57,9 @@ beforeEach(async () => {
     INSERT INTO tabela_movimentacoes VALUES (1,3,1,'saida',2,10,'${month}-02','OS 3'),(2,2,1,'saida',9,10,'${month}-01','OS 2');
     INSERT INTO tabela_checklist VALUES (1,'Início','inicio',1),(2,'Fim','fim',1);
     INSERT INTO tabela_checklist_perguntas VALUES (11,1,'Seguro?','radio',NULL,1),(12,2,'Concluído?','radio',NULL,1);
-    INSERT INTO tabela_usuario_permissao VALUES (2,'produtos'),(2,'eletricistas'),(2,'checklist'),(4,'metas');
+    INSERT INTO tabela_usuario_permissao VALUES (2,'produtos'),(2,'eletricistas'),(2,'checklist'),(4,'metas'),(5,'perfil_supervisor'),(5,'eletricistas'),(5,'produtos');
   `);
-  for (const row of [[1,'admin',1,null],[2,'11111111111',0,1],[3,'22222222222',0,2],[4,'gestor',0,null]]) {
+  for (const row of [[1,'admin',1,null],[2,'11111111111',0,1],[3,'22222222222',0,2],[4,'gestor',0,null],[5,'supervisor',0,null]]) {
     await query('INSERT INTO tabela_usuarios VALUES (?,?,?,?,?)', [row[0],row[1],password,row[2],row[3]]);
   }
 });
@@ -168,5 +168,68 @@ describe('Isolamento dos dados', () => {
     expect((await asUser('get','/dashboard',1)).body.data.totais).toMatchObject({os:3,metas:1000,eletricistas:2});
     expect((await asUser('put','/metas/1',4).send({vlr_meta:120})).status).toBe(200);
     expect((await asUser('get','/dashboard',4)).status).toBe(403);
+  });
+});
+
+// Usa a mesma base de testes para validar o perfil sem alterar o schema do banco.
+describe('Acesso do supervisor', () => {
+  it('permite ao administrador criar, editar e remover o perfil de supervisor', async () => {
+    const created = await asUser('post','/usuarios',1).send({usuario:'novo_supervisor',senha:'senha123',perfil:'supervisor',permissoes:['eletricistas']});
+    expect(created.status).toBe(201);
+    const userId = created.body.data.id;
+    const login = await request(app).post('/api/v1/auth/login').send({nome:'novo_supervisor',senha:'senha123'});
+    expect(login.status).toBe(200);
+    expect(login.body.data.usuario).toMatchObject({perfil:'supervisor',isAdmin:false,isSupervisor:true,permissoes:['menu','ordemServico','metas','checklist']});
+    expect((await asUser('get','/usuarios',1)).body.data.find(user=>user.id===userId).perfil).toBe('supervisor');
+    // A edição parcial preserva o perfil quando só a senha muda.
+    expect((await asUser('put',`/usuarios/${userId}`,1).send({senha:'novaSenha123'})).status).toBe(200);
+    expect((await asUser('get','/auth/me',userId)).body.data.perfil).toBe('supervisor');
+    // A revogação vale imediatamente, mesmo para o token recebido antes dela.
+    expect((await asUser('put',`/usuarios/${userId}`,1).send({perfil:'padrao',permissoes:[]})).status).toBe(200);
+    const oldToken = login.body.data.accessToken;
+    expect((await request(app).post('/api/v1/ordens-servico').set('Authorization',`Bearer ${oldToken}`).send({eletricista_os:1})).status).toBe(403);
+    expect((await asUser('put',`/usuarios/${userId}`,1).send({perfil:'supervisor'})).status).toBe(200);
+    expect((await asUser('get','/auth/me',userId)).body.data.perfil).toBe('supervisor');
+  });
+
+  it('cria e acompanha OS da equipe, metas e checklists', async () => {
+    const os = await asUser('post','/ordens-servico',5).send({eletricista_os:2,data_os:`${month}-01`});
+    expect(os.status).toBe(201);
+    expect((await asUser('get',`/ordens-servico/${os.body.data.id}`,5)).status).toBe(200);
+    expect((await asUser('post',`/ordens-servico/${os.body.data.id}/comentarios`,5).send({comentario:'Atribuída pela supervisão'})).status).toBe(201);
+    expect((await asUser('post',`/ordens-servico/${os.body.data.id}/abertura`,5).send({id_produto:[1],qtd_utilizada:[1],checklistRespostas:{11:'sim'}})).status).toBe(200);
+    expect((await asUser('post',`/ordens-servico/${os.body.data.id}/fechamento`,5).send({checklistRespostas:{12:'sim'}})).status).toBe(200);
+    const meta = await asUser('post','/metas',5).send({eletricista_meta:1,mes_meta:'2027-01',vlr_meta:1500});
+    expect(meta.status).toBe(201);
+    expect((await asUser('put',`/metas/${meta.body.data.id}`,5).send({vlr_meta:1600})).status).toBe(200);
+    const checklist = await asUser('post','/checklists',5).send({titulo:'Segurança',tipo:'inicio',pergunta:['Usando EPI?'],tipo_resposta:['radio']});
+    expect(checklist.status).toBe(201);
+    expect((await asUser('get',`/checklists/${checklist.body.data.id}/perguntas`,5)).body.data[0].texto_pergunta).toBe('Usando EPI?');
+  });
+
+  it('nega consultas e alterações nos cadastros de usuários e eletricistas', async () => {
+    const routes = [
+      ['get','/usuarios'],['post','/usuarios'],['put','/usuarios/1'],['delete','/usuarios/1'],
+      ['get','/eletricistas'],['post','/eletricistas'],['put','/eletricistas/1'],
+      ['patch','/eletricistas/1/demissao'],['patch','/eletricistas/1/reativacao'],
+      ['get','/produtos'],['get','/movimentacoes'],['get','/lancamentos'],
+    ];
+    for (const [method,path] of routes) expect((await asUser(method,path,5).send({usuario:'indevido',senha:'senha123',perfil:'admin'})).status).toBe(403);
+    expect((await query('SELECT COUNT(*) total FROM tabela_usuarios'))[0].total).toBe(5);
+    expect((await query('SELECT COUNT(*) total FROM tabela_eletricistas'))[0].total).toBe(2);
+    expect((await asUser('put','/usuarios/2',1).send({perfil:'supervisor'})).status).toBe(422);
+    expect((await asUser('put','/usuarios/1',1).send({perfil:'supervisor'})).status).toBe(409);
+  });
+
+  it('fornece opções de atribuição e dados da equipe sem expor os cadastros pessoais', async () => {
+    const options = await asUser('get','/metas/opcoes',5);
+    expect(options.status).toBe(200);
+    expect(options.body.data).toEqual([{id:1,nome:'Ana'},{id:2,nome:'Bruno'}]);
+    const orders = await asUser('get','/ordens-servico',5);
+    expect(orders.body.data).toMatchObject({podeSolicitar:true,paginacao:{total:3}});
+    expect((await asUser('get','/metas',5)).body.data).toHaveLength(2);
+    expect((await asUser('get','/dashboard',5)).body.data).toMatchObject({perfil:'supervisor',totais:{os:3,metas:1000}});
+    // O novo endpoint auxiliar continua indisponível ao eletricista.
+    expect((await asUser('get','/metas/opcoes',2)).status).toBe(403);
   });
 });

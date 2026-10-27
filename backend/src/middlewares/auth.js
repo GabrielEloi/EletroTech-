@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
 import { query } from '../config/database.js';
 import { AppError } from '../shared/http.js';
-import { normalizedUser } from '../shared/access.js';
+import { normalizedUser, canManageOrders } from '../shared/access.js';
 
 export async function requireAuth(req, _res, next) {
   const token = req.headers.authorization?.replace(/^Bearer\s+/i, '');
@@ -24,6 +24,7 @@ export async function requireAuth(req, _res, next) {
   } catch (error) { next(error); }
 }
 export const requireAdmin = (req, _res, next) => req.user?.isAdmin ? next() : next(new AppError(403, 'Acesso restrito a administradores.', 'FORBIDDEN'));
+export const requireOrderManager = (req, _res, next) => canManageOrders(req.user) ? next() : next(new AppError(403, 'Apenas administradores e supervisores podem solicitar OS.', 'FORBIDDEN'));
 export const requirePermission = (permission) => (req, _res, next) => req.user?.isAdmin || req.user?.permissoes?.includes(permission) ? next() : next(new AppError(403, 'Você não possui esta permissão.', 'FORBIDDEN'));
 // Metas são definidas pela gestão; o eletricista apenas acompanha as que recebeu.
 export const requireManagement = (req, _res, next) => req.user?.eletricistaId ? next(new AppError(403, 'Ação não permitida ao perfil de eletricista.', 'FORBIDDEN')) : next();

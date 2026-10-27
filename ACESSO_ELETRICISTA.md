@@ -143,3 +143,9 @@ projeto sobre hooks/organização e o build informa o tamanho do bundle.
 Foram adicionados quatro testes simples para `normalizedUser` e
 `requirePermission`. Consulte [TESTES_UNITARIOS.md](TESTES_UNITARIOS.md).
 Para executar somente esses testes, use `npm run test:unit --prefix backend`.
+
+## Perfil de supervisor
+
+A gestão agora também pode liberar o perfil Supervisor, com Dashboard, OS, Metas
+e Checklists. Veja [ACESSO_SUPERVISOR.md](ACESSO_SUPERVISOR.md). O supervisor não
+tem acesso à gestão de usuários ou eletricistas.

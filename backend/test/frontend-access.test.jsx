@@ -7,6 +7,8 @@ import Navbar from '../../src/components/Navbar';
 import Layout from '../../src/components/Layout';
 import RotaProtegida from '../../src/components/RotaProtegida';
 import MetasPage from '../../src/pages/MetasPage';
+import OrdemServicoPage from '../../src/pages/OrdemServicoPage';
+import ChecklistPage from '../../src/pages/ChecklistPage';
 
 function render(user, child) {
   vi.stubGlobal('localStorage', { getItem: () => JSON.stringify(user) });
@@ -35,5 +37,24 @@ describe('Interface do eletricista', () => {
   });
   it('interpreta is_admin zero como usuário padrão, inclusive em string', () => {
     expect(render({id:4,is_admin:'0',permissoes:['metas']},<Navbar />)).not.toContain('Usuários');
+  });
+});
+
+describe('Interface do supervisor', () => {
+  const supervisor = { id:5,is_admin:0,perfil:'supervisor',eletricista_id:null,permissoes:['eletricistas','produtos'] };
+
+  it('mostra os módulos operacionais e bloqueia as telas de gestão de pessoas', () => {
+    const html = render(supervisor,<Navbar />);
+    for (const text of ['Dashboard','Ordens de Serviço','Metas','Checklist']) expect(html).toContain(text);
+    for (const text of ['Usuários','Eletricistas','Produtos','Movimentação','Baixas']) expect(html).not.toContain(text);
+    for (const permissao of ['adminOnly','eletricistas']) {
+      expect(render(supervisor,<RotaProtegida permissao={permissao}><p>CADASTRO_RESTRITO</p></RotaProtegida>)).not.toContain('CADASTRO_RESTRITO');
+    }
+  });
+
+  it('exibe as ações para criar OS, metas e checklists', () => {
+    expect(render(supervisor,<OrdemServicoPage />)).toContain('Solicitar OS');
+    expect(render(supervisor,<MetasPage />)).toContain('Nova Meta');
+    expect(render(supervisor,<ChecklistPage />)).toContain('Novo Checklist');
   });
 });
