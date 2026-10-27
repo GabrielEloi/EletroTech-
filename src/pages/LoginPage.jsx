@@ -15,11 +15,12 @@ export default function LoginPage() {
     e.preventDefault();
     setErro("");
     try {
-      await login(nome, senha);
-      navigate("/home");
+      // O mesmo login encaminha o eletricista diretamente ao seu dashboard.
+      const usuario = await login(nome, senha);
+      navigate(usuario.eletricista_id ? "/menu" : "/home");
     } catch (err) {
       setErro(
-        err.response?.data?.mensagem || "Não foi possível entrar. Verifique usuário e senha."
+        err.response?.data?.error?.message || err.response?.data?.mensagem || "Não foi possível entrar. Verifique usuário e senha."
       );
     }
   }

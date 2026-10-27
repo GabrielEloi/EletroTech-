@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import * as usuariosApi from "../api/usuarios";
-import { PERMISSOES_DISPONIVEIS } from "../constants/permissoes";
+import { PERMISSOES_DISPONIVEIS, PERMISSOES_ELETRICISTA } from "../constants/permissoes";
 import Modal from "../components/Modal";
 import Pagination from "../components/Pagination";
 import { Carregando, ErroCarregamento, ListaVazia } from "../components/EstadoLista";
@@ -59,7 +59,7 @@ export default function UsuariosPage() {
       usuario: usuario.usuario,
       senha: "",
       is_admin: !!Number(usuario.is_admin),
-      permissoes: usuario.permissoes || [],
+      permissoes: usuario.eletricista_id ? [...PERMISSOES_ELETRICISTA] : usuario.permissoes || [],
     });
     setEhEletricista(usuario.eletricista_id !== null && usuario.eletricista_id !== undefined);
     setModalEditarAberto(true);
@@ -285,7 +285,7 @@ export default function UsuariosPage() {
 
           {ehEletricista && (
             <div className="permissoes-aviso" style={{ display: "block" }}>
-              Conta de eletricista — o login é o CPF e não pode virar administrador.
+              Conta de eletricista: login por CPF, com Dashboard, Ordens de Serviço e Metas. O perfil é fixo.
             </div>
           )}
 
@@ -313,7 +313,7 @@ export default function UsuariosPage() {
                   <input
                     type="checkbox"
                     checked={form.is_admin || form.permissoes.includes(chave)}
-                    disabled={form.is_admin}
+                    disabled={form.is_admin || ehEletricista}
                     onChange={() => togglePermissao(chave)}
                   />
                   <label>{rotulo}</label>

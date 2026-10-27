@@ -48,7 +48,7 @@ export default function OrdemServicoPage() {
     setCarregando(true);
     setErro("");
     osApi
-      .listarOrdensServico()
+      .listarOrdensServico({ page: pagina, pageSize: POR_PAGINA, status: filtroStatus })
       .then((res) => setDadosPagina(res.data))
       .catch(() => setErro("Não foi possível carregar as ordens de serviço."))
       .finally(() => setCarregando(false));
@@ -56,7 +56,7 @@ export default function OrdemServicoPage() {
 
   useEffect(() => {
     carregar();
-  }, []);
+  }, [pagina, filtroStatus]);
 
   const ordensServico = dadosPagina?.ordensServico ?? [];
   const eletricistasAtivos = dadosPagina?.eletricistasAtivos ?? [];
@@ -65,10 +65,9 @@ export default function OrdemServicoPage() {
   const checklistFim = dadosPagina?.checklistFim;
   const podeSolicitar = dadosPagina?.podeSolicitar ?? ehAdmin;
 
-  const filtradas = ordensServico.filter((os) => filtroStatus === "todas" || os.status === filtroStatus);
-  const totalRows = filtradas.length;
-  const inicio = (pagina - 1) * POR_PAGINA;
-  const paginaAtual = filtradas.slice(inicio, inicio + POR_PAGINA);
+// A paginação e o status são aplicados na API após o filtro de propriedade.
+  const totalRows = dadosPagina?.paginacao?.total ?? 0;
+  const paginaAtual = ordensServico;
 
   async function handleSolicitar(e) {
     e.preventDefault();

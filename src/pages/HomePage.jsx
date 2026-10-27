@@ -6,7 +6,7 @@ import logo from "../assets/img/logo-eletrotech.png";
 import { Carregando } from "../components/EstadoLista";
 
 export default function HomePage() {
-  const { usuario } = useAuth();
+  const { usuario, pode } = useAuth();
   const [dados, setDados] = useState(null);
   const [carregando, setCarregando] = useState(true);
 
@@ -17,8 +17,8 @@ export default function HomePage() {
       .finally(() => setCarregando(false));
   }, []);
 
-  const nomeExibicao = dados?.usuario || usuario?.nome || "Usuário";
-  const destino = dados?.destino || "menu";
+  const nomeExibicao = dados?.nome || usuario?.nome || "Usuário";
+  const destino = dados?.destino || (pode("menu") ? "/menu" : "/ordem-servico");
   const rotuloDestino = dados?.rotuloDestino || "Dashboard";
 
   return (
@@ -30,7 +30,7 @@ export default function HomePage() {
         <>
           <h1>Bem-vindo, {nomeExibicao}!</h1>
           <p>Sistema de gestão da EletroTech Soluções Elétricas.</p>
-          <Link to={`/${destino === "menu" ? "menu" : destino}`}>
+          <Link to={destino}>
             <button className="btn-dashboard">
               <i className="fa-solid fa-gauge-high"></i> Acessar {rotuloDestino}
             </button>

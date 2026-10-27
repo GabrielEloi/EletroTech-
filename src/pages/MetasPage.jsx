@@ -6,9 +6,12 @@ import Pagination from "../components/Pagination";
 import { Carregando, ErroCarregamento, ListaVazia } from "../components/EstadoLista";
 import { useNotificacao } from "../context/NotificacaoContext";
 
+import { useAuth } from "../context/AuthContext";
+
 const POR_PAGINA = 10;
 
 export default function MetasPage() {
+  const { ehEletricista } = useAuth();
   const { notificar } = useNotificacao();
   const [metas, setMetas] = useState([]);
   const [eletricistasAtivos, setEletricistasAtivos] = useState([]);
@@ -40,7 +43,8 @@ export default function MetasPage() {
 
   useEffect(() => {
     carregar();
-    eletricistasApi
+    // A consulta da equipe só é necessária para quem administra as metas.
+    if (!ehEletricista) eletricistasApi
       .listarEletricistas()
       .then((res) => {
         const lista = res.data?.eletricistas ?? res.data ?? [];
@@ -59,6 +63,7 @@ export default function MetasPage() {
   function handleLimparFiltros() {
     setFiltroEletricista("");
     setFiltroMes("");
+    setPagina(1);
     carregar({ filtro_eletricista: "", filtro_mes: "" });
   }
 
@@ -112,17 +117,17 @@ export default function MetasPage() {
     <div className="container">
       <div className="page-header">
         <h1>Metas</h1>
-        <p>Metas mensais de faturamento por eletricista.</p>
+        <p>{ehEletricista ? "Consulte suas metas mensais de faturamento." : "Metas mensais de faturamento por eletricista."}</p>
       </div>
 
-      <div id="acoes_id">
+      {!ehEletricista && <div id="acoes_id">
         <button type="button" onClick={() => setModalNova(true)}>
           <i className="fa-solid fa-plus"></i> Nova Meta
         </button>
-      </div>
+      </div>}
 
       <form onSubmit={handleFiltrar} className="filtro-mes justify-content-center">
-        <div>
+        {!ehEletricista && <div>
           <label>Eletricista</label>
           <select
             className="form-select"
@@ -134,7 +139,7 @@ export default function MetasPage() {
               <option key={el.id} value={el.id}>{el.nome}</option>
             ))}
           </select>
-        </div>
+        </div>}
         <div>
           <label>Mês</label>
           <input
@@ -161,7 +166,7 @@ export default function MetasPage() {
           <table className="table table-dark table-hover table-bordered custom-table text-center tabela-eletrotech mt-3">
             <thead>
               <tr>
-                <th style={{ width: "15%" }}>Ações</th>
+                {!ehEletricista && <th style={{ width: "15%" }}>Ações</th>}
                 <th style={{ width: "40%" }}>Eletricista</th>
                 <th style={{ width: "20%" }}>Mês de Referência</th>
                 <th style={{ width: "15%" }}>Valor da Meta</th>
@@ -172,7 +177,7 @@ export default function MetasPage() {
               {paginaAtual.length > 0 ? (
                 paginaAtual.map((m) => (
                   <tr key={m.id}>
-                    <td>
+                    {!ehEletricista && <td>
                       <button
                         className="btn btn-sm btn-outline-warning"
                         onClick={() => {
@@ -185,7 +190,7 @@ export default function MetasPage() {
                       <button className="btn btn-sm btn-outline-danger" onClick={() => handleExcluir(m.id)}>
                         <i className="fa-solid fa-trash"></i>
                       </button>
-                    </td>
+                    </td>}
                     <td>{m.nome_eletricista}</td>
                     <td>{m.mes_meta || "-"}</td>
                     <td>R$ {Number(m.vlr_meta).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
@@ -201,7 +206,7 @@ export default function MetasPage() {
         </>
       )}
 
-      <Modal aberto={modalNova} onFechar={() => setModalNova(false)} titulo="Cadastrar Meta">
+      {!ehEletricista && <Modal aberto={modalNova} onFechar={() => setModalNova(false)} titulo="Cadastrar Meta">
         <form className="eletrotech-form" onSubmit={handleNova}>
           <label>Eletricista</label>
           <select
@@ -234,9 +239,9 @@ export default function MetasPage() {
             {salvando ? "Salvando..." : "Cadastrar"}
           </button>
         </form>
-      </Modal>
+      </Modal>}
 
-      <Modal aberto={modalEditar} onFechar={() => setModalEditar(false)} titulo="Editar Meta">
+      {!ehEletricista && <Modal aberto={modalEditar} onFechar={() => setModalEditar(false)} titulo="Editar Meta">
         <form className="eletrotech-form" onSubmit={handleEditar}>
           <label>Eletricista</label>
           <p style={{ fontWeight: 700 }}>{editando.nome_eletricista}</p>
@@ -254,7 +259,7 @@ export default function MetasPage() {
             {salvando ? "Salvando..." : "Gravar Alterações"}
           </button>
         </form>
-      </Modal>
+      </Modal>}
     </div>
   );
 }

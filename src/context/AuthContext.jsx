@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import * as authApi from "../api/auth";
 
+import { PERMISSOES_ELETRICISTA } from "../constants/permissoes";
+
 const AuthContext = createContext(null);
 
 const STORAGE_KEY = "eletrotech_usuario";
@@ -53,15 +55,17 @@ export function AuthProvider({ children }) {
     setUsuario(null);
   }
 
-  const ehAdmin = !!usuario?.is_admin;
-  const permissoes = usuario?.permissoes || [];
+  // A interface também limita contas antigas vinculadas a um eletricista.
+  const ehEletricista = !!(usuario?.eletricista_id ?? usuario?.eletricistaId);
+  const ehAdmin = !ehEletricista && Number(usuario?.is_admin ?? usuario?.isAdmin) === 1;
+  const permissoes = ehEletricista ? PERMISSOES_ELETRICISTA : usuario?.permissoes || [];
 
   function pode(chave) {
     return ehAdmin || permissoes.includes(chave);
   }
 
   const value = useMemo(
-    () => ({ usuario, setUsuario, carregando, erro, login, logout, ehAdmin, permissoes, pode }),
+    () => ({ usuario, setUsuario, carregando, erro, login, logout, ehAdmin, ehEletricista, permissoes, pode }),
     [usuario, carregando, erro]
   );
 
