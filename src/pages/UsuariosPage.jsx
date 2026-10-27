@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import * as usuariosApi from "../api/usuarios";
-import { PERMISSOES_DISPONIVEIS, PERMISSOES_ELETRICISTA } from "../constants/permissoes";
+import { PERMISSOES_DISPONIVEIS, PERMISSOES_ELETRICISTA, PERMISSOES_SUPERVISOR } from "../constants/permissoes";
 import Modal from "../components/Modal";
 import Pagination from "../components/Pagination";
 import { Carregando, ErroCarregamento, ListaVazia } from "../components/EstadoLista";
@@ -9,7 +9,27 @@ import { useNotificacao } from "../context/NotificacaoContext";
 const POR_PAGINA = 10;
 
 function formularioVazio() {
-  return { id: null, usuario: "", senha: "", is_admin: false, permissoes: [] };
+  return { id: null, usuario: "", senha: "", is_admin: false, perfil: "padrao", permissoes: [] };
+}
+
+// O administrador escolhe o perfil; os módulos do supervisor são preenchidos automaticamente.
+function SeletorPerfil({ id, perfil, onChange, ehEletricista = false }) {
+  return (
+    <>
+      <label className="campo" htmlFor={id}>Perfil de acesso</label>
+      <select id={id} value={perfil} disabled={ehEletricista} onChange={(e) => onChange(e.target.value)}>
+        <option value="padrao">Padrão (permissões personalizadas)</option>
+        <option value="supervisor">Supervisor</option>
+        <option value="admin">Administrador (acesso total)</option>
+        {ehEletricista && <option value="eletricista">Eletricista</option>}
+      </select>
+      {perfil === "supervisor" && (
+        <div className="permissoes-aviso" style={{ display: "block" }}>
+          Supervisor: Dashboard, Ordens de Serviço, Metas e Checklists. Sem acesso à gestão de usuários e eletricistas.
+        </div>
+      )}
+    </>
+  );
 }
 
 export default function UsuariosPage() {
@@ -48,7 +68,17 @@ export default function UsuariosPage() {
     }));
   }
 
+  function mudarPerfil(perfil) {
+    setForm((f) => ({
+      ...f, perfil, is_admin: perfil === "admin",
+      permissoes: perfil === "supervisor" ? [...PERMISSOES_SUPERVISOR] : [],
+    }));
+  }
+
+  const permissoesFixas = form.is_admin || form.perfil === "supervisor" || ehEletricista;
+
   function abrirCriar() {
+    setEhEletricista(false);
     setForm(formularioVazio());
     setModalCriarAberto(true);
   }
@@ -58,7 +88,8 @@ export default function UsuariosPage() {
       id: usuario.id,
       usuario: usuario.usuario,
       senha: "",
-      is_admin: !!Number(usuario.is_admin),
+      is_admin: !usuario.eletricista_id && Number(usuario.is_admin) === 1,
+      perfil: usuario.perfil || (usuario.eletricista_id ? "eletricista" : Number(usuario.is_admin) === 1 ? "admin" : "padrao"),
       permissoes: usuario.eletricista_id ? [...PERMISSOES_ELETRICISTA] : usuario.permissoes || [],
     });
     setEhEletricista(usuario.eletricista_id !== null && usuario.eletricista_id !== undefined);
@@ -73,13 +104,14 @@ export default function UsuariosPage() {
         usuario: form.usuario,
         senha: form.senha,
         is_admin: form.is_admin ? 1 : 0,
+        perfil: form.perfil,
         permissoes: form.permissoes,
       });
       notificar("Usuário criado com sucesso.");
       setModalCriarAberto(false);
       carregar();
     } catch (err) {
-      notificar(err.response?.data?.mensagem || "Erro ao criar usuário.", "erro");
+      notificar(err.response?.data?.error?.message || err.response?.data?.mensagem || "Erro ao criar usuário.", "erro");
     } finally {
       setSalvando(false);
     }
@@ -94,13 +126,14 @@ export default function UsuariosPage() {
         usuario: form.usuario,
         senha: form.senha,
         is_admin: form.is_admin ? 1 : 0,
+        perfil: form.perfil,
         permissoes: form.permissoes,
       });
       notificar("Usuário atualizado com sucesso.");
       setModalEditarAberto(false);
       carregar();
     } catch (err) {
-      notificar(err.response?.data?.mensagem || "Erro ao editar usuário.", "erro");
+      notificar(err.response?.data?.error?.message || err.response?.data?.mensagem || "Erro ao editar usuário.", "erro");
     } finally {
       setSalvando(false);
     }
@@ -113,7 +146,7 @@ export default function UsuariosPage() {
       notificar("Usuário excluído.");
       carregar();
     } catch (err) {
-      notificar(err.response?.data?.mensagem || "Erro ao excluir usuário.", "erro");
+      notificar(err.response?.data?.error?.message || err.response?.data?.mensagem || "Erro ao excluir usuário.", "erro");
     }
   }
 
@@ -186,6 +219,8 @@ export default function UsuariosPage() {
                         <span className="badge" style={{ backgroundColor: "#FBD814", color: "#282828", fontWeight: "bold" }}>Administrador</span>
                       ) : u.eletricista_id ? (
                         <span className="badge" style={{ backgroundColor: "#555", color: "#eee" }}>Eletricista</span>
+                      ) : u.perfil === "supervisor" ? (
+                        <span className="badge" style={{ backgroundColor: "#555", color: "#eee" }}>Supervisor</span>
                       ) : (
                         <span className="badge" style={{ backgroundColor: "#555", color: "#eee" }}>Padrão</span>
                       )}
@@ -225,14 +260,7 @@ export default function UsuariosPage() {
             Contas de eletricista são criadas na tela de Eletricistas.
           </div>
 
-          <div className="switch-admin">
-            <input
-              type="checkbox"
-              checked={form.is_admin}
-              onChange={(e) => setForm({ ...form, is_admin: e.target.checked })}
-            />
-            <label>Administrador (acesso total)</label>
-          </div>
+          <SeletorPerfil id="perfil-novo" perfil={form.perfil} onChange={mudarPerfil} />
 
           {form.is_admin && (
             <div className="permissoes-aviso" style={{ display: "block" }}>
@@ -240,7 +268,7 @@ export default function UsuariosPage() {
             </div>
           )}
 
-          <div className={`permissoes-bloco ${form.is_admin ? "desativado" : ""}`}>
+          <div className={`permissoes-bloco ${permissoesFixas ? "desativado" : ""}`}>
             <div className="titulo">Módulos liberados</div>
             <div className="permissoes-grid">
               {Object.entries(PERMISSOES_DISPONIVEIS).map(([chave, rotulo]) => (
@@ -248,7 +276,7 @@ export default function UsuariosPage() {
                   <input
                     type="checkbox"
                     checked={form.is_admin || form.permissoes.includes(chave)}
-                    disabled={form.is_admin}
+                    disabled={permissoesFixas}
                     onChange={() => togglePermissao(chave)}
                   />
                   <label>{rotulo}</label>
@@ -289,15 +317,7 @@ export default function UsuariosPage() {
             </div>
           )}
 
-          <div className="switch-admin">
-            <input
-              type="checkbox"
-              disabled={ehEletricista}
-              checked={form.is_admin}
-              onChange={(e) => setForm({ ...form, is_admin: e.target.checked })}
-            />
-            <label>Administrador (acesso total)</label>
-          </div>
+          <SeletorPerfil id="perfil-editar" perfil={form.perfil} onChange={mudarPerfil} ehEletricista={ehEletricista} />
 
           {form.is_admin && (
             <div className="permissoes-aviso" style={{ display: "block" }}>
@@ -305,7 +325,7 @@ export default function UsuariosPage() {
             </div>
           )}
 
-          <div className={`permissoes-bloco ${form.is_admin ? "desativado" : ""}`}>
+          <div className={`permissoes-bloco ${permissoesFixas ? "desativado" : ""}`}>
             <div className="titulo">Módulos liberados</div>
             <div className="permissoes-grid">
               {Object.entries(PERMISSOES_DISPONIVEIS).map(([chave, rotulo]) => (
@@ -313,7 +333,7 @@ export default function UsuariosPage() {
                   <input
                     type="checkbox"
                     checked={form.is_admin || form.permissoes.includes(chave)}
-                    disabled={form.is_admin || ehEletricista}
+                    disabled={permissoesFixas}
                     onChange={() => togglePermissao(chave)}
                   />
                   <label>{rotulo}</label>

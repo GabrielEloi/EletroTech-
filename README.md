@@ -1,5 +1,7 @@
 # EletroTech — Frontend (React)
 
+> Perfil de supervisor: veja [ACESSO_SUPERVISOR.md](ACESSO_SUPERVISOR.md) para permissões e ativação.
+>
 > Acesso de eletricista na versão React/Node: veja [ACESSO_ELETRICISTA.md](ACESSO_ELETRICISTA.md) para ativação, execução e validação.
 
 Este é o **frontend React** do sistema EletroTech, reconstruído a partir das telas PHP/CodeIgniter originais (`views/telas/*.php`).

@@ -26,6 +26,17 @@ describe('normalizedUser', () => {
     expect(usuario.isAdmin).toBe(false);
     expect(usuario.permissoes).toEqual(['menu', 'ordemServico', 'metas']);
   });
+
+  it('define o supervisor com os módulos operacionais, sem privilégios de administrador', () => {
+    const usuario = normalizedUser({
+      id: 5, usuario: 'supervisor', is_admin: 0, eletricista_id: null,
+      permissoesJson: JSON.stringify(['perfil_supervisor', 'eletricistas', 'produtos']),
+    });
+
+    expect(usuario.perfil).toBe('supervisor');
+    expect(usuario.isAdmin).toBe(false);
+    expect(usuario.permissoes).toEqual(['menu', 'ordemServico', 'metas', 'checklist']);
+  });
 });
 
 // O next simulado registra se a função autorizou a ação ou devolveu um erro.

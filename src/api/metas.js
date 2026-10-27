@@ -5,6 +5,11 @@ export function listarMetas(filtros = {}) {
   return api.get("/metas", { params: filtros });
 }
 
+// Busca somente as opções necessárias para atribuir metas, sem liberar o cadastro da equipe.
+export function opcoesMetas() {
+  return api.get("/metas/opcoes");
+}
+
 // POST /metas/cadastrar { eletricista_meta, mes_meta, vlr_meta }
 export function cadastrarMeta(dados) {
   return api.post("/metas", toFormBody(dados));
