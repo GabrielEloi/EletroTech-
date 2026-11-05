@@ -12,25 +12,7 @@ Melhorar as mensagens de erro, carregamento e confirmação de ações.
 
 Corrigir problemas de navegação, exibição de dados e permissões de acesso.
 
-2. Novas funcionalidades
-
-Agenda de serviços: organizar serviços por data, horário e eletricista.
-
-Ordens de serviço: acompanhar status, responsáveis, prazos e histórico.
-
-Notificações: alertar sobre serviços atrasados, tarefas pendentes e estoque baixo.
-
-Controle de estoque: registrar entradas, saídas e níveis mínimos de produtos.
-
-Relatórios: consultar resultados e exportar dados para PDF ou planilhas.
-
-Histórico de atividades: identificar quem realizou alterações e quando.
-
-Perfil do usuário: permitir atualização de dados e gerenciamento seguro da conta.
-
-Metas e desempenho: acompanhar resultados individuais e coletivos dos eletricistas.
-
-3. Melhorias técnicas
+2. Melhorias técnicas
 
 Reforçar a autenticação e as permissões no frontend e no backend.
 
