@@ -258,13 +258,18 @@ export default function MenuPage() {
         <div className="col-lg-6">
           <div className="painel painel-destaque">
             <h3 style={{ color: "#FBD814" }}>Status das ordens de serviço</h3>
-            {(graficoStatus.solicitada || graficoStatus.aberta || graficoStatus.fechada) ? (
+            {(graficoStatus.solicitada || graficoStatus.aberta || graficoStatus.fechada || graficoStatus.bloqueada) ? (
               <Doughnut
                 data={{
-                  labels: ["Solicitadas", "Abertas", "Fechadas"],
+                    labels: ["Solicitadas", "Abertas", "Fechadas", "Bloqueadas"],
                   datasets: [{
-                    data: [Number(graficoStatus.solicitada || 0), Number(graficoStatus.aberta || 0), Number(graficoStatus.fechada || 0)],
-                    backgroundColor: ["#FBD814", "#f8a81e", "#4ade80"],
+                      data: [
+                        Number(graficoStatus.solicitada || 0),
+                        Number(graficoStatus.aberta || 0),
+                        Number(graficoStatus.fechada || 0),
+                        Number(graficoStatus.bloqueada || 0),
+                      ],
+                      backgroundColor: ["#FBD814", "#f8a81e", "#4ade80", "#f87171"],
                     borderColor: "#282828",
                     borderWidth: 2,
                   }],

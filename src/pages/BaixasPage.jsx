@@ -1,10 +1,23 @@
 import { useEffect, useState } from "react";
 import * as baixasApi from "../api/baixas";
-import * as produtosApi from "../api/produtos";
 import { Carregando, ErroCarregamento, ListaVazia } from "../components/EstadoLista";
 import { useAuth } from "../context/AuthContext";
+import { relatorioMistoBaixas } from "../api/baixas";
+import { relatorioLancamento } from "../api/lancamentos";
+import { abrirJanelaRelatorio, mostrarRelatorio } from "../utils/relatorio";
 
-const API_BASE = import.meta.env.VITE_API_URL || "/index.php";
+function numeroSeguro(valor) {
+  const numero = Number(valor);
+  return Number.isFinite(numero) ? numero : 0;
+}
+
+function formatarData(valor) {
+  if (!valor) return "-";
+  const data = String(valor).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (data) return `${data[3]}/${data[2]}/${data[1]}`;
+  const convertida = new Date(valor);
+  return Number.isNaN(convertida.getTime()) ? "-" : convertida.toLocaleDateString("pt-BR");
+}
 
 export default function BaixasPage() {
   const { ehAdmin } = useAuth();
@@ -21,17 +34,24 @@ export default function BaixasPage() {
     setErro("");
     baixasApi
       .listarBaixas({ consultar: 1, ...novosFiltros })
-      .then((res) => setMovimentacoes(res.data?.movimentacoes ?? res.data ?? []))
+      .then((res) => {
+        const rows = res.data?.movimentacoes ?? res.data ?? [];
+        setMovimentacoes(rows);
+        setProdutos([
+          ...new Map(
+            rows.map((row) => [
+              row.id_produto,
+              { id: row.id_produto, nome_produto: row.nome_produto },
+            ])
+          ).values(),
+        ]);
+      })
       .catch(() => setErro("Não foi possível carregar as movimentações."))
       .finally(() => setCarregando(false));
   }
 
   useEffect(() => {
     carregar();
-    produtosApi
-      .listarProdutos()
-      .then((res) => setProdutos(res.data?.produtos ?? res.data ?? []))
-      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -50,22 +70,41 @@ export default function BaixasPage() {
     setSelecionados((lista) => (lista.includes(id) ? lista.filter((i) => i !== id) : [...lista, id]));
   }
 
-  function abrirRelatorioMisto() {
+  async function abrirRelatorioMisto() {
     if (selecionados.length === 0) return;
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.action = `${API_BASE}/baixas/relatorio_misto`;
-    form.target = "_blank";
-    selecionados.forEach((id) => {
-      const input = document.createElement("input");
-      input.type = "hidden";
-      input.name = "ids[]";
-      input.value = id;
-      form.appendChild(input);
-    });
-    document.body.appendChild(form);
-    form.submit();
-    document.body.removeChild(form);
+    const janela = abrirJanelaRelatorio();
+    if (!janela) return;
+    try {
+      const { data } = await relatorioMistoBaixas(selecionados);
+      mostrarRelatorio(janela, "Relatório de movimentações", data?.movimentacoes ?? data);
+    } catch (error) {
+      janela.close();
+      window.alert(error.response?.data?.mensagem || "Não foi possível gerar o relatório.");
+    }
+  }
+
+  async function abrirRelatorioDetalhado(id) {
+    const janela = abrirJanelaRelatorio();
+    if (!janela) return;
+    try {
+      const { data } = await relatorioMistoBaixas([id]);
+      mostrarRelatorio(janela, `Relatório da movimentação #${id}`, data?.movimentacoes ?? data);
+    } catch (error) {
+      janela.close();
+      window.alert(error.response?.data?.mensagem || "Não foi possível abrir o relatório.");
+    }
+  }
+
+  async function abrirRelatorioLancamento(id) {
+    const janela = abrirJanelaRelatorio();
+    if (!janela) return;
+    try {
+      const { data } = await relatorioLancamento(id);
+      mostrarRelatorio(janela, `Relatório da baixa #${id}`, data);
+    } catch (error) {
+      janela.close();
+      window.alert(error.response?.data?.mensagem || "Não foi possível abrir o relatório.");
+    }
   }
 
   return (
@@ -150,15 +189,17 @@ export default function BaixasPage() {
                         onChange={() => toggleSelecionado(m.id)}
                       />
                       <a
-                        href={`${API_BASE}/baixas/detalhes/${m.id}`}
-                        target="_blank"
-                        rel="noreferrer"
+                        href="#relatorio"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          abrirRelatorioDetalhado(m.id);
+                        }}
                         title="Ver relatório detalhado"
                       >
                         <i className="fa-solid fa-file-lines"></i>
                       </a>
                     </td>
-                    <td>{m.data_mov ? new Date(m.data_mov).toLocaleDateString("pt-BR") : "-"}</td>
+                    <td>{formatarData(m.data_mov)}</td>
                     <td>{m.nome_produto}</td>
                     <td>
                       {m.tipo === "entrada" ? (
@@ -168,11 +209,17 @@ export default function BaixasPage() {
                       )}
                     </td>
                     <td>{m.quantidade}</td>
-                    <td>R$ {Number(m.valor_unitario).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
-                    <td>R$ {Number(m.valor_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+                    <td>R$ {numeroSeguro(m.valor_unitario).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+                    <td>R$ {numeroSeguro(m.valor_total ?? numeroSeguro(m.quantidade) * numeroSeguro(m.valor_unitario)).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
                     <td>
                       {m.id_baixa && ehAdmin ? (
-                        <a href={`${API_BASE}/lancamentos/relatorio/${m.id_baixa}`} target="_blank" rel="noreferrer">
+                        <a
+                          href="#relatorio"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            abrirRelatorioLancamento(m.id_baixa);
+                          }}
+                        >
                           {m.origem}
                         </a>
                       ) : (

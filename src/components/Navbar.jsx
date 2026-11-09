@@ -1,11 +1,14 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import logo from "../assets/img/logo-eletrotech.png";
 
 export default function Navbar() {
   const { ehAdmin, pode, logout } = useAuth();
+  const { pathname } = useLocation();
 
   const linkClass = ({ isActive }) => "nav-link" + (isActive ? " active" : "");
+  const grupoAtivo = (rotas) =>
+    "nav-link dropdown-toggle" + (rotas.some((rota) => pathname.startsWith(rota)) ? " active" : "");
 
   return (
     <nav className="navbar navbar-expand-lg navbar-custom">
@@ -18,70 +21,53 @@ export default function Navbar() {
           type="button"
           data-bs-toggle="collapse"
           data-bs-target="#navbarSupportedContent"
+          aria-controls="navbarSupportedContent"
+          aria-expanded="false"
+          aria-label="Abrir navegação"
         >
           <span className="navbar-toggler-icon"></span>
         </button>
 
         <div className="collapse navbar-collapse" id="navbarSupportedContent">
-          <ul className="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
+          <ul className="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center">
             {pode("menu") && (
               <li className="nav-item">
                 <NavLink className={linkClass} to="/menu">Dashboard</NavLink>
               </li>
             )}
-            {ehAdmin && (
-              <li className="nav-item">
-                <NavLink className={linkClass} to="/usuarios">Usuários</NavLink>
-              </li>
-            )}
-            {pode("eletricistas") && (
-              <li className="nav-item">
-                <NavLink className={linkClass} to="/eletricistas">Eletricistas</NavLink>
-              </li>
-            )}
-            {pode("produtos") && (
-              <li className="nav-item">
-                <NavLink className={linkClass} to="/produtos">Produtos</NavLink>
-              </li>
-            )}
-            {pode("metas") && (
-              <li className="nav-item">
-                <NavLink className={linkClass} to="/metas">Metas</NavLink>
-              </li>
-            )}
-            {pode("ordemServico") && (
-              <li className="nav-item">
-                <NavLink className={linkClass} to="/ordem-servico">Ordens de Serviço</NavLink>
-              </li>
-            )}
-            {pode("checklist") && (
+            {(ehAdmin || pode("eletricistas") || pode("produtos") || pode("metas")) && (
               <li className="nav-item dropdown">
-                <a
-                  className="nav-link dropdown-toggle"
-                  href="#"
-                  role="button"
+                <button
+                  type="button"
+                  className={grupoAtivo(["/usuarios", "/eletricistas", "/produtos", "/metas"])}
                   data-bs-toggle="dropdown"
                 >
-                  Checklist
-                </a>
+                  Cadastros
+                </button>
                 <ul className="dropdown-menu dropdown-menu-dark">
-                  <li>
-                    <NavLink className="dropdown-item" to="/checklist">Seleção Checklist</NavLink>
-                  </li>
-                  <li>
-                    <NavLink className="dropdown-item" to="/consulta-checklist">Consulta Checklist</NavLink>
-                  </li>
+                  {ehAdmin && <li><NavLink className="dropdown-item" to="/usuarios">Usuários</NavLink></li>}
+                  {pode("eletricistas") && <li><NavLink className="dropdown-item" to="/eletricistas">Eletricistas</NavLink></li>}
+                  {pode("produtos") && <li><NavLink className="dropdown-item" to="/produtos">Produtos</NavLink></li>}
+                  {pode("metas") && <li><NavLink className="dropdown-item" to="/metas">Metas</NavLink></li>}
                 </ul>
               </li>
             )}
-            {pode("baixas") && (
-              <li className="nav-item">
-                <NavLink className={linkClass} to="/baixas">Movimentação</NavLink>
-              </li>
-            )}
-            {ehAdmin && (
-              <li className="nav-item">
-                <NavLink className={linkClass} to="/lancamentos">Baixas</NavLink>
+            {(pode("ordemServico") || pode("checklist") || pode("baixas") || ehAdmin) && (
+              <li className="nav-item dropdown">
+                <button
+                  type="button"
+                  className={grupoAtivo(["/ordem-servico", "/checklist", "/consulta-checklist", "/baixas", "/lancamentos"])}
+                  data-bs-toggle="dropdown"
+                >
+                  Operações
+                </button>
+                <ul className="dropdown-menu dropdown-menu-dark">
+                  {pode("ordemServico") && <li><NavLink className="dropdown-item" to="/ordem-servico">Ordens de Serviço</NavLink></li>}
+                  {pode("checklist") && <li><NavLink className="dropdown-item" to="/checklist">Checklist</NavLink></li>}
+                  {pode("checklist") && <li><NavLink className="dropdown-item" to="/consulta-checklist">Consulta Checklist</NavLink></li>}
+                  {pode("baixas") && <li><NavLink className="dropdown-item" to="/baixas">Movimentação</NavLink></li>}
+                  {ehAdmin && <li><NavLink className="dropdown-item" to="/lancamentos">Baixas de Estoque</NavLink></li>}
+                </ul>
               </li>
             )}
             <li className="nav-item ms-3">

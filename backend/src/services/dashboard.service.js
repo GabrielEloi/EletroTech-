@@ -7,17 +7,20 @@ import { AppError } from '../shared/http.js';
  */
 async function obterDashboard(user, { mes } = {}) {
   if (mes && !/^\d{4}-(0[1-9]|1[0-2])$/.test(mes)) throw new AppError(422, 'Mês inválido, use YYYY-MM.', 'VALIDATION_ERROR');
-  const ehAdmin = !!user.is_admin;
+  const ehAdmin = user.isAdmin === true || Number(user.is_admin ?? user.isAdmin) === 1;
   const eletricistaId = user.eletricista_id ? Number(user.eletricista_id) : null;
-  const filtro = !ehAdmin && eletricistaId ? eletricistaId : null;
+  if (!ehAdmin && !eletricistaId) {
+    throw new AppError(403, 'O dashboard está disponível apenas para administradores e eletricistas.', 'FORBIDDEN');
+  }
+  const filtro = ehAdmin ? null : eletricistaId;
 
   const [totais, graficoEletricista, graficoMes, graficoStatus, graficoMovimentacao] =
     await Promise.all([
       repo.contarTotais(filtro),
-      repo.getOsPorEletricista(filtro),
+      repo.getOsPorEletricista(filtro, mes),
       repo.getOsPorMes(mes, filtro),
-      repo.getOsPorStatus(filtro),
-      repo.getMovimentacaoPorMes(filtro),
+      repo.getOsPorStatus(filtro, mes),
+      repo.getMovimentacaoPorMes(filtro, mes),
     ]);
 
   const data = {

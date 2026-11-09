@@ -17,10 +17,13 @@ export default function LoginPage() {
     try {
       // O mesmo login encaminha o eletricista diretamente ao seu dashboard.
       const usuario = await login(nome, senha);
-      navigate(usuario.eletricista_id ? "/menu" : "/home");
+      navigate(usuario.eletricista_id || usuario.eletricistaId ? "/menu" : "/home");
     } catch (err) {
       setErro(
-        err.response?.data?.error?.message || err.response?.data?.mensagem || "Não foi possível entrar. Verifique usuário e senha."
+        err.response?.data?.mensagem ||
+          err.response?.data?.error?.message ||
+          err.response?.data?.message ||
+          "Não foi possível entrar. Verifique usuário e senha."
       );
     }
   }
@@ -35,6 +38,8 @@ export default function LoginPage() {
         {erro && (
           <div
             className="alert alert-danger"
+            role="alert"
+            aria-live="assertive"
             style={{ color: "#ff4c5d", textAlign: "center", marginBottom: 15, fontWeight: "bold" }}
           >
             {erro}
@@ -69,9 +74,18 @@ export default function LoginPage() {
             />
             <i
               className={`fa-regular ${mostrarSenha ? "fa-eye-slash" : "fa-eye"} ml-input-icon`}
+              role="button"
+              tabIndex={0}
+              aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setMostrarSenha((v) => !v);
+                }
+              }}
               onClick={() => setMostrarSenha((v) => !v)}
               style={{ cursor: "pointer" }}
-            ></i>
+            />
           </div>
 
           <div className="container-button">

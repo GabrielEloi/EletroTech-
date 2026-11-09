@@ -38,6 +38,8 @@ export function AuthProvider({ children }) {
     } catch (e) {
       setErro(
         e.response?.data?.mensagem ||
+          e.response?.data?.error?.message ||
+          e.response?.data?.message ||
           "Não foi possível entrar. Verifique usuário e senha."
       );
       throw e;

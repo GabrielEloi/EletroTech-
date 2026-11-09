@@ -190,7 +190,7 @@ export default function MetasPage() {
                         <i className="fa-solid fa-trash"></i>
                       </button>
                     </td>}
-                    <td>{m.nome_eletricista}</td>
+                    <td>{m.nome_eletricista || m.eletricista_nome || m.nome || "-"}</td>
                     <td>{m.mes_meta || "-"}</td>
                     <td>R$ {Number(m.vlr_meta).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
                     <td>{m.id}</td>

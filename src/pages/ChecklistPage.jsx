@@ -121,9 +121,16 @@ export default function ChecklistPage() {
     setCarregandoPerguntas(true);
     try {
       const { data } = await checklistApi.perguntasChecklist(id);
-      setPerguntasVisualizadas(data?.perguntas ?? data ?? []);
-    } catch {
+      const lista = data?.perguntas ?? data ?? [];
+      setPerguntasVisualizadas(
+        lista.map((pergunta) => ({
+          ...pergunta,
+          pergunta: pergunta.pergunta ?? pergunta.texto_pergunta ?? "",
+        }))
+      );
+    } catch (error) {
       setPerguntasVisualizadas([]);
+      notificar(error.response?.data?.mensagem || "Não foi possível carregar as perguntas.", "erro");
     } finally {
       setCarregandoPerguntas(false);
     }
@@ -205,7 +212,7 @@ export default function ChecklistPage() {
                     <td>{c.id}</td>
                     <td>{c.titulo}</td>
                     <td className="text-capitalize">{c.tipo}</td>
-                    <td>{c.qtd_perguntas ?? "-"}</td>
+                    <td>{c.qtd_perguntas ?? c.quantidade_perguntas ?? "-"}</td>
                     <td>
                       {c.selecionado ? (
                         <span className="badge" style={{ backgroundColor: "#FBD814", color: "#282828" }}>Padrão atual</span>
