@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import * as consultaApi from "../api/consultaChecklist";
-import * as eletricistasApi from "../api/eletricistas";
 import Modal from "../components/Modal";
 import { Carregando, ErroCarregamento, ListaVazia } from "../components/EstadoLista";
 import { useNotificacao } from "../context/NotificacaoContext";
+import { relatorioChecklist } from "../api/consultaChecklist";
+import { abrirJanelaRelatorio, mostrarRelatorio } from "../utils/relatorio";
 
 export default function ConsultaChecklistPage() {
   const { notificar } = useNotificacao();
@@ -30,17 +31,16 @@ export default function ConsultaChecklistPage() {
         eletricista: filtros.eletricista ?? filtroEletricista,
         ordenar: filtros.ordenar ?? ordenar,
       })
-      .then((res) => setLista(res.data?.bloqueados ?? res.data ?? []))
+      .then((res) => {
+        setLista(res.data?.bloqueados ?? res.data ?? []);
+        setEletricistas(res.data?.eletricistas ?? []);
+      })
       .catch(() => setErro("Não foi possível carregar as pendências de checklist."))
       .finally(() => setCarregando(false));
   }
 
   useEffect(() => {
     carregar();
-    eletricistasApi
-      .listarEletricistas()
-      .then((res) => setEletricistas(res.data?.eletricistas ?? res.data ?? []))
-      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -82,6 +82,18 @@ export default function ConsultaChecklistPage() {
       notificar(err.response?.data?.mensagem || "Erro ao registrar decisão.", "erro");
     } finally {
       setEnviando(false);
+    }
+  }
+
+  async function handleRelatorio(idOs, tipo) {
+    const janela = abrirJanelaRelatorio();
+    if (!janela) return;
+    try {
+      const { data } = await relatorioChecklist(idOs, tipo);
+      mostrarRelatorio(janela, `Relatório da OS #${idOs} — ${tipo}`, data);
+    } catch (error) {
+      janela.close();
+      notificar(error.response?.data?.mensagem || "Não foi possível gerar o relatório.", "erro");
     }
   }
 
@@ -150,15 +162,14 @@ export default function ConsultaChecklistPage() {
               lista.map((c) => (
                 <tr key={`${c.id_os}-${c.tipo}`}>
                   <td>
-                    <a
-                      href={`${import.meta.env.VITE_API_URL || "/index.php"}/consultachecklist/relatorio/${c.id_os}/${c.tipo}`}
-                      target="_blank"
-                      rel="noreferrer"
+                    <button
+                      type="button"
+                      onClick={() => handleRelatorio(c.id_os, c.tipo)}
                       className="btn btn-sm btn-outline-info"
                       title="Gerar relatório"
                     >
                       <i className="fa-solid fa-file-lines"></i>
-                    </a>{" "}
+                    </button>{" "}
                     <button className="btn btn-sm btn-outline-warning" onClick={() => abrirModalFinalizar(c.id_os, c.tipo)}>
                       Decidir
                     </button>

@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // API REST Node/Express. Configure VITE_API_URL sem a barra final.
-const baseURL = import.meta.env.VITE_API_URL || "http://localhost:3100/api/v1";
+const baseURL = import.meta.env.VITE_API_URL || "http://localhost:3001/api/v1";
 
 const api = axios.create({
   baseURL,
@@ -45,6 +45,10 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
+    const data = error.response?.data;
+    if (data?.error?.message && !data.mensagem) {
+      error.response.data = { ...data, mensagem: data.error.message };
+    }
     if (error.response?.status === 401 || error.response?.status === 403) {
       // Sessão expirada/sem permissão - deixa a tela decidir o redirecionamento.
     }

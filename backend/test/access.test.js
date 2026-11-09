@@ -48,6 +48,7 @@ beforeEach(async () => {
     CREATE TABLE tabela_checklist(id INTEGER PRIMARY KEY,titulo TEXT,tipo TEXT,selecionado INTEGER);
     CREATE TABLE tabela_checklist_perguntas(id INTEGER PRIMARY KEY,id_checklist INTEGER,texto_pergunta TEXT,tipo_resposta TEXT,bloqueia_abertura TEXT,ordem INTEGER);
     CREATE TABLE tabela_os_checklist_respostas(id INTEGER PRIMARY KEY,id_os INTEGER,id_pergunta INTEGER,resposta TEXT,motivo_nao TEXT);
+    CREATE TABLE tabela_os_checklist_status(id INTEGER PRIMARY KEY AUTOINCREMENT,id_os INTEGER,tipo TEXT,bloqueado INTEGER,observacao TEXT,data_bloqueio TEXT,data_finalizacao TEXT,UNIQUE(id_os,tipo));
     CREATE TABLE tabela_os_comentarios(id INTEGER PRIMARY KEY,id_os INTEGER,comentario TEXT,data_comentario TEXT);
     INSERT INTO tabela_eletricistas VALUES (1,'Ana','11111111111','2026-01-01',NULL),(2,'Bruno','22222222222','2026-01-01',NULL);
     INSERT INTO tabela_metas VALUES (1,1,'${month}',100),(2,2,'${month}',900);
@@ -108,11 +109,157 @@ describe('Login e perfil de eletricista', () => {
   it('impede promover uma conta de eletricista a administrador', async () => {
     expect((await asUser('put','/usuarios/2',1).send({is_admin:1})).status).toBe(422);
   });
+  it('preserva o perfil padrão ao editar permissões de usuário', async () => {
+    const updated = await asUser('put','/usuarios/4',1).send({
+      usuario: 'gestor',
+      is_admin: 0,
+      permissoes: ['metas'],
+    });
+    expect(updated.status).toBe(200);
+    expect((await query('SELECT is_admin FROM tabela_usuarios WHERE id=4'))[0].is_admin).toBe(0);
+  });
+  it('retorna OS concluídas e meta do mês na lista de eletricistas', async () => {
+    const response = await asUser('get','/eletricistas',1);
+    expect(response.status).toBe(200);
+    expect(response.body.data).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 1, total_os: 1, meta_atual: 100 }),
+      expect.objectContaining({ id: 2, total_os: 0, meta_atual: 900 }),
+    ]));
+  });
   it.each(['/usuarios','/eletricistas','/produtos','/checklists','/movimentacoes','/movimentacoes/totais','/lancamentos','/eletricistas/2/ordens-servico'])('nega acesso direto a %s', async path => {
     expect((await asUser('get',path)).status).toBe(403);
   });
   it('nega acesso ao assistente fora dos módulos do perfil', async () => {
     expect((await asUser('post','/chat').send({mensagem:'teste'})).status).toBe(403);
+  });
+});
+
+describe('Consulta Checklist', () => {
+  async function seedPendencias() {
+    await query(
+      'INSERT INTO tabela_os_checklist_status (id,id_os,tipo,bloqueado,data_bloqueio) VALUES (1,1,?,1,?),(2,2,?,1,?),(3,3,?,0,?)',
+      ['inicio', '2026-03-01 10:00:00', 'fim', '2026-03-02 10:00:00', 'fim', '2026-03-03 10:00:00']
+    );
+    await query("INSERT INTO tabela_os_checklist_respostas VALUES (1,1,11,'não','')");
+  }
+
+  it('lista somente pendências e aplica filtros e ordenação solicitados pela tela', async () => {
+    await seedPendencias();
+    const all = await asUser('get', '/consultachecklist', 1);
+    expect(all.status).toBe(200);
+    expect(all.body.data.bloqueados.map(({ id_os }) => id_os)).toEqual([2, 1]);
+    expect(all.body.data.eletricistas).toEqual([{ id: 1, nome: 'Ana' }, { id: 2, nome: 'Bruno' }]);
+
+    const byType = await asUser('get', '/checklists/pendencias?tipo=inicio', 1);
+    expect(byType.body.data.bloqueados.map(({ id_os }) => id_os)).toEqual([1]);
+
+    const byElectrician = await asUser('get', '/consultachecklist?eletricista=2', 1);
+    expect(byElectrician.body.data.bloqueados.map(({ id_os }) => id_os)).toEqual([2]);
+
+    const oldest = await asUser('get', '/consultachecklist?ordenar=data_asc', 1);
+    expect(oldest.body.data.bloqueados.map(({ id_os }) => id_os)).toEqual([1, 2]);
+    expect(oldest.body.data.bloqueados[0]).toMatchObject({
+      tipo: 'inicio',
+      nome_eletricista: 'Ana',
+      status_os: 'solicitada',
+    });
+    expect((await asUser('get','/consultachecklist?tipo=desconhecido',1)).status).toBe(422);
+    expect((await asUser('get','/consultachecklist?ordenar=aleatorio',1)).status).toBe(422);
+  });
+
+  it('registra decisão autorizada e mantém negação pendente conforme regra legada', async () => {
+    await seedPendencias();
+    const authorized = await asUser('post', '/consultachecklist/finalizar', 1).send({
+      id_os: 1, tipo: 'inicio', observacao: 'Revisado', acao: 'autorizar',
+    });
+    expect(authorized.status).toBe(200);
+    expect((await query('SELECT bloqueado,observacao,data_finalizacao FROM tabela_os_checklist_status WHERE id=1'))[0])
+      .toMatchObject({ bloqueado: 0, observacao: 'Revisado' });
+    expect((await query('SELECT status FROM tabela_ordens_servico WHERE id=1'))[0].status).toBe('aberta');
+
+    const denied = await asUser('post', '/checklists/pendencias/2/fim/resolucao', 1).send({
+      observacao: 'Ainda não atende', acao: 'negar',
+    });
+    expect(denied.status).toBe(200);
+    expect((await query('SELECT bloqueado,observacao,data_finalizacao FROM tabela_os_checklist_status WHERE id=2'))[0])
+      .toMatchObject({ bloqueado: 1, observacao: 'Ainda não atende', data_finalizacao: null });
+    expect((await query('SELECT status FROM tabela_ordens_servico WHERE id=2'))[0].status).toBe('bloqueada');
+  });
+
+  it('registra bloqueios criados pela abertura e pelo fechamento da OS', async () => {
+    await query("UPDATE tabela_checklist_perguntas SET bloqueia_abertura='sim' WHERE id IN (11,12)");
+    const opened = await asUser('post', '/ordens-servico/1/abertura').send({
+      id_produto: [1], qtd_utilizada: [1], checklistRespostas: { 11: 'sim' },
+    });
+    expect(opened.status).toBe(200);
+    expect((await query("SELECT bloqueado FROM tabela_os_checklist_status WHERE id_os=1 AND tipo='inicio'"))[0].bloqueado).toBe(1);
+
+    const closed = await asUser('post', '/ordens-servico/1/fechamento').send({
+      checklistRespostas: { 12: 'sim' },
+    });
+    expect(closed.status).toBe(200);
+    expect((await query("SELECT bloqueado FROM tabela_os_checklist_status WHERE id_os=1 AND tipo='fim'"))[0].bloqueado).toBe(1);
+  });
+
+  it('rejeita decisão inválida, observação ausente e pendência já resolvida', async () => {
+    await seedPendencias();
+    expect((await asUser('post', '/consultachecklist/finalizar', 1).send({
+      id_os: 1, tipo: 'inicio', observacao: '', acao: 'autorizar',
+    })).status).toBe(422);
+    expect((await asUser('post', '/consultachecklist/finalizar', 1).send({
+      id_os: 1, tipo: 'inicio', observacao: 'OK', acao: 'ignorar',
+    })).status).toBe(422);
+    expect((await asUser('post', '/checklists/pendencias/3/fim/resolucao', 1).send({
+      observacao: 'OK', acao: 'autorizar',
+    })).status).toBe(409);
+  });
+
+  it('retorna relatório com dados da OS, respostas do tipo e status do checklist', async () => {
+    await seedPendencias();
+    await query("UPDATE tabela_os_checklist_status SET observacao='Aguardando' WHERE id=1");
+    const res = await asUser('get', '/consultachecklist/relatorio/1/inicio', 1);
+    expect(res.status).toBe(200);
+    expect(res.body.data).toMatchObject({
+      idOs: 1,
+      tipo: 'inicio',
+      ordem: { id: 1, nome_eletricista: 'Ana', status: 'solicitada' },
+      respostas: [{ id_pergunta: 11, texto_pergunta: 'Seguro?', resposta: 'não' }],
+      status: { id_os: 1, tipo: 'inicio', bloqueado: 1, observacao: 'Aguardando' },
+    });
+    expect((await asUser('get', '/checklists/pendencias/1/inicio/relatorio', 1)).status).toBe(200);
+    expect((await asUser('get', '/consultachecklist/relatorio/999/inicio', 1)).status).toBe(404);
+  });
+
+  it('protege as rotas com autenticação e permissão checklist', async () => {
+    const paths = ['/consultachecklist', '/checklists/pendencias'];
+    for (const path of paths) {
+      expect((await request(app).get(`/api/v1${path}`)).status).toBe(401);
+      expect((await asUser('get', path)).status).toBe(403);
+    }
+    expect((await request(app).get('/api/v1/consultachecklist/relatorio/1/inicio')).status).toBe(401);
+    expect((await asUser('post', '/consultachecklist/finalizar').send({})).status).toBe(403);
+  });
+});
+
+describe('Listagem de checklists', () => {
+  it('retorna a contagem de perguntas para a tabela', async () => {
+    const response = await asUser('get','/checklists',1);
+    expect(response.status).toBe(200);
+    expect(response.body.data).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 1, qtd_perguntas: 1 }),
+      expect.objectContaining({ id: 2, qtd_perguntas: 1 }),
+    ]));
+  });
+});
+
+describe('Movimentações', () => {
+  it('retorna o valor total calculado a partir da quantidade e do valor unitário', async () => {
+    const response = await asUser('get','/movimentacoes',1);
+    expect(response.status).toBe(200);
+    expect(response.body.data).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 1, valor_total: 20 }),
+      expect.objectContaining({ id: 2, valor_total: 90 }),
+    ]));
   });
 });
 
@@ -161,12 +308,18 @@ describe('Isolamento dos dados', () => {
     expect(res.body.data.graficoEletricista).toEqual([{eletricista:'Ana',total:2}]);
     expect(res.body.data.graficoMes).toEqual([{mes:month,total:2}]);
     expect(res.body.data.graficoMovimentacao).toEqual([{mes:month,entrada:0,saida:20}]);
+    await query(`INSERT INTO tabela_ordens_servico VALUES (4,2,'${month}-03','fechada','${month}-03')`);
+    const filtered=await asUser('get',`/dashboard?mes=${month}`);
+    expect(filtered.body.data.graficoEletricista).toEqual([{eletricista:'Ana',total:2}]);
+    expect(filtered.body.data.graficoMes).toEqual([{mes:month,total:2}]);
+    expect(filtered.body.data.graficoStatus.fechada).toBe(1);
   });
   it('mantém acesso geral do administrador e gestão por usuário padrão autorizado', async () => {
     expect((await asUser('get','/metas',1)).body.data).toHaveLength(2);
     expect((await asUser('get','/ordens-servico',1)).body.data.paginacao.total).toBe(3);
     expect((await asUser('get','/dashboard',1)).body.data.totais).toMatchObject({os:3,metas:1000,eletricistas:2});
     expect((await asUser('put','/metas/1',4).send({vlr_meta:120})).status).toBe(200);
+    await query("INSERT INTO tabela_usuario_permissao VALUES (4,'menu')");
     expect((await asUser('get','/dashboard',4)).status).toBe(403);
   });
 });

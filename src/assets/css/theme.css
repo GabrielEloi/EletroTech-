@@ -192,3 +192,57 @@ label {
   color: #ccc;
   font-weight: 600;
 }
+
+@media (max-width: 991.98px) {
+  main.container-fluid {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+
+  .page-header {
+    margin-top: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .page-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .filtro-mes {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .filtro-mes > div,
+  .filtro-mes .form-control,
+  .filtro-mes .form-select {
+    width: 100%;
+  }
+
+  .tabela-eletrotech {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .card-eletrotech {
+    padding: 1.25rem 1rem;
+  }
+
+  .card-eletrotech .metric-value {
+    font-size: 1.75rem;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .container-login {
+    max-width: calc(100% - 1.5rem);
+    padding: 2rem 1.5rem;
+  }
+
+  .page-header h1 {
+    font-size: 1.35rem;
+  }
+}

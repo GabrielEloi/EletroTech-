@@ -58,24 +58,30 @@ async function getMetaAtual(idEletricista) {
   return rows.length ? Number(rows[0].vlr_meta) : 0;
 }
 
-async function getOsPorEletricista(idEletricista = null) {
+async function getOsPorEletricista(idEletricista = null, mes = null) {
   let sql = `
     SELECT e.nome AS eletricista, COUNT(os.id) AS total
     FROM tabela_ordens_servico os
     LEFT JOIN tabela_eletricistas e ON e.id = os.eletricista_os`;
+  const filters = [];
   const params = [];
 
   if (temFiltro(idEletricista)) {
-    sql += ' WHERE os.eletricista_os = ?';
+    filters.push('os.eletricista_os = ?');
     params.push(Number(idEletricista));
   }
+  if (mes) {
+    filters.push("DATE_FORMAT(os.data_os, '%Y-%m') = ?");
+    params.push(mes);
+  }
+  if (filters.length) sql += ` WHERE ${filters.join(' AND ')}`;
   sql += ' GROUP BY e.id, e.nome ORDER BY total DESC';
 
   const rows = await query(sql, params);
   return rows.map((r) => ({ eletricista: r.eletricista, total: Number(r.total) }));
 }
 
-async function getMovimentacaoPorMes(idEletricista = null) {
+async function getMovimentacaoPorMes(idEletricista = null, mes = null) {
   let sql = `
     SELECT DATE_FORMAT(m.data_mov, '%Y-%m') AS mes,
       SUM(CASE WHEN m.tipo = 'entrada' THEN m.quantidade * m.valor_unitario ELSE 0 END) AS entrada,
@@ -84,8 +90,17 @@ async function getMovimentacaoPorMes(idEletricista = null) {
   const params = [];
 
   if (temFiltro(idEletricista)) {
-    sql += ' LEFT JOIN tabela_ordens_servico os ON os.id = m.id_os WHERE os.eletricista_os = ?';
+    sql += ' LEFT JOIN tabela_ordens_servico os ON os.id = m.id_os';
+    const filters = ['os.eletricista_os = ?'];
     params.push(Number(idEletricista));
+    if (mes) {
+      filters.push("DATE_FORMAT(m.data_mov, '%Y-%m') = ?");
+      params.push(mes);
+    }
+    sql += ` WHERE ${filters.join(' AND ')}`;
+  } else if (mes) {
+    sql += " WHERE DATE_FORMAT(m.data_mov, '%Y-%m') = ?";
+    params.push(mes);
   }
   sql += " GROUP BY DATE_FORMAT(m.data_mov, '%Y-%m') ORDER BY mes ASC";
 
@@ -93,18 +108,24 @@ async function getMovimentacaoPorMes(idEletricista = null) {
   return rows.map((r) => ({ mes: r.mes, entrada: Number(r.entrada), saida: Number(r.saida) }));
 }
 
-async function getOsPorStatus(idEletricista = null) {
+async function getOsPorStatus(idEletricista = null, mes = null) {
   let sql = 'SELECT status, COUNT(id) AS total FROM tabela_ordens_servico';
+  const filters = [];
   const params = [];
 
   if (temFiltro(idEletricista)) {
-    sql += ' WHERE eletricista_os = ?';
+    filters.push('eletricista_os = ?');
     params.push(Number(idEletricista));
   }
+  if (mes) {
+    filters.push("DATE_FORMAT(data_os, '%Y-%m') = ?");
+    params.push(mes);
+  }
+  if (filters.length) sql += ` WHERE ${filters.join(' AND ')}`;
   sql += ' GROUP BY status';
 
   const rows = await query(sql, params);
-  const resultado = { solicitada: 0, aberta: 0, fechada: 0 };
+  const resultado = { solicitada: 0, aberta: 0, fechada: 0, bloqueada: 0 };
   for (const r of rows) resultado[r.status] = Number(r.total);
   return resultado;
 }

@@ -257,6 +257,9 @@ Origem: `ConsultaChecklistController` + `ChecklistModel` (usa permissão `checkl
 | `GET` | `/api/v1/checklists/pendencias?tipo=&eletricistaId=&ordenar=data_desc` | `checklist` | Lista OS com checklist bloqueado aguardando revisão |
 | `POST` | `/api/v1/checklists/pendencias/:idOs/:tipo/resolucao` | `checklist` | Autoriza ou nega a pendência |
 | `GET` | `/api/v1/checklists/pendencias/:idOs/:tipo/relatorio` | `checklist` | Relatório das respostas do checklist da OS |
+| `GET` | `/api/v1/consultachecklist?tipo=&eletricista=&ordenar=` | `checklist` | Alias usado pela tela de Consulta Checklist |
+| `POST` | `/api/v1/consultachecklist/finalizar` | `checklist` | Alias; recebe `id_os`, `tipo`, `acao` e `observacao` no corpo |
+| `GET` | `/api/v1/consultachecklist/relatorio/:idOs/:tipo` | `checklist` | Alias do relatório; responde JSON para impressão pela interface |
 
 **`POST .../resolucao`**
 ```json
