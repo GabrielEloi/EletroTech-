@@ -115,7 +115,7 @@ export default function EletricistasPage() {
               <tr>
                 <th>Ações</th>
                 <th>CPF</th>
-                <th>Nome</th>
+                <th>Nome</th><th>Supervisor</th>
                 <th>Contratação</th>
                 <th>Demissão</th>
                 <th>Status</th>
@@ -151,7 +151,7 @@ export default function EletricistasPage() {
                         )}
                       </td>
                       <td>{e.cpf}</td>
-                      <td>{e.nome}</td>
+                      <td>{e.nome}</td><td>{e.supervisor || "Sem supervisor"}</td>
                       <td>{e.data_contratacao || "-"}</td>
                       <td>{e.data_demissao || "-"}</td>
                       <td>

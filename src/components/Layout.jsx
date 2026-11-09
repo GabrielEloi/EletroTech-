@@ -1,7 +1,7 @@
 import Navbar from "./Navbar";
 import Chatbot from "./Chatbot";
 
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/auth-store";
 
 export default function Layout({ children }) {
   const { ehEletricista } = useAuth();

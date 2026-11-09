@@ -1,16 +1,17 @@
 import api, { toFormBody } from "./client";
 
-// GET /consultachecklist?tipo=&eletricista=&ordenar=
+// GET /checklists/pendencias?tipo=&eletricista=&ordenar=
 export function listarConsultaChecklist(filtros = {}) {
-  return api.get("/consultachecklist", { params: filtros });
+  return api.get("/checklists/pendencias", { params: filtros });
 }
 
-// POST /consultachecklist/finalizar { id_os, tipo, observacao, acao }
+// POST /checklists/pendencias/:idOs/:tipo/resolucao { observacao, acao }
 export function finalizarConsultaChecklist(dados) {
-  return api.post("/consultachecklist/finalizar", toFormBody(dados));
+  return api.post(`/checklists/pendencias/${dados.id_os}/${dados.tipo}/resolucao`, toFormBody(dados));
 }
 
-// GET /consultachecklist/relatorio/{idOs}/{tipo}
+// GET /checklists/pendencias/:idOs/:tipo/relatorio
 export function relatorioChecklist(idOs, tipo) {
-  return api.get(`/consultachecklist/relatorio/${idOs}/${tipo}`);
+  return api.get(`/checklists/pendencias/${idOs}/${tipo}/relatorio`);
 }
+export const opcoesConsultaChecklist = () => api.get('/checklists/pendencias/opcoes');

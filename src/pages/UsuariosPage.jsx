@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import * as usuariosApi from "../api/usuarios";
 import { PERMISSOES_DISPONIVEIS, PERMISSOES_ELETRICISTA, PERMISSOES_SUPERVISOR } from "../constants/permissoes";
 import Modal from "../components/Modal";
@@ -38,6 +38,7 @@ export default function UsuariosPage() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
   const [pagina, setPagina] = useState(1);
+  const [total, setTotal] = useState(0);
 
   const [modalCriarAberto, setModalCriarAberto] = useState(false);
   const [modalEditarAberto, setModalEditarAberto] = useState(false);
@@ -45,19 +46,19 @@ export default function UsuariosPage() {
   const [ehEletricista, setEhEletricista] = useState(false);
   const [salvando, setSalvando] = useState(false);
 
-  function carregar() {
+  const carregar = useCallback(() => {
     setCarregando(true);
     setErro("");
     usuariosApi
-      .listarUsuarios()
-      .then((res) => setUsuarios(res.data?.usuarios ?? res.data ?? []))
+      .listarUsuarios({ page: pagina, pageSize: POR_PAGINA })
+      .then((res) => { setUsuarios(res.data?.usuarios ?? res.data ?? []); setTotal(Number(res.meta?.total || 0)); const ultima = Math.max(1,Math.ceil(Number(res.meta?.total || 0)/POR_PAGINA)); if (pagina > ultima) setPagina(ultima); })
       .catch(() => setErro("Não foi possível carregar a lista de usuários."))
       .finally(() => setCarregando(false));
-  }
+  }, [pagina]);
 
   useEffect(() => {
     carregar();
-  }, []);
+  }, [carregar]);
 
   function togglePermissao(chave) {
     setForm((f) => ({
@@ -109,7 +110,7 @@ export default function UsuariosPage() {
       });
       notificar("Usuário criado com sucesso.");
       setModalCriarAberto(false);
-      carregar();
+      if (pagina === 1) carregar(); else setPagina(1);
     } catch (err) {
       notificar(err.response?.data?.error?.message || err.response?.data?.mensagem || "Erro ao criar usuário.", "erro");
     } finally {
@@ -150,9 +151,8 @@ export default function UsuariosPage() {
     }
   }
 
-  const totalRows = usuarios.length;
-  const inicio = (pagina - 1) * POR_PAGINA;
-  const paginaAtual = usuarios.slice(inicio, inicio + POR_PAGINA);
+  const totalRows = total;
+  const paginaAtual = usuarios;
 
   return (
     <div className="container">

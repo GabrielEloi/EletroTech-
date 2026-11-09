@@ -1,80 +1,43 @@
 # Acesso do supervisor
 
-Implementado na versão React/Node do EletroTech, seguindo o controle de acesso
-existente. O supervisor usa a mesma tela de login, com usuário e senha.
+O administrador cria o login em **Supervisores → Novo Supervisor**, depois abre
+**Associar eletricistas** e seleciona os profissionais ativos da equipe.
+Cada eletricista possui um supervisor responsável. Uma transferência exige marcar
+a opção correspondente no formulário e revoga o acesso do supervisor anterior.
+Também é possível continuar criando o perfil pela tela Usuários.
 
-## Permissões
+O supervisor usa o mesmo login do sistema e recebe Dashboard, Minha equipe,
+Ordens de Serviço, Metas e Checklists. O marcador `perfil_supervisor` continua
+na tabela de permissões; não aparece como módulo na interface.
 
-| Área | Supervisor |
-| --- | --- |
-| Dashboard | Consulta os indicadores da equipe |
-| Ordens de Serviço | Consulta, solicita para eletricistas cadastrados e acompanha a execução |
-| Metas | Consulta e gerencia as metas da equipe |
-| Checklists | Cria modelos e perguntas e gerencia a seleção de checklists |
-| Usuários | Acesso bloqueado |
-| Eletricistas | Acesso ao cadastro bloqueado |
-| Produtos e movimentações | Sem permissão de acesso aos módulos |
+## Pode fazer
 
-As ações de OS mantêm as validações existentes de estoque, status e checklist.
-A restrição do eletricista aos próprios dados continua valendo.
+- Acompanhar exclusivamente os eletricistas associados, seus indicadores e OS.
+- Solicitar OS apenas para um eletricista ativo da equipe.
+- Abrir, fechar e bloquear OS da equipe, registrando motivo quando bloquear.
+- Ajustar descrição, local e valor do serviço antes do fechamento.
+- Consultar detalhes, comentários, fotos e histórico das OS autorizadas.
+- Definir metas mensais e anuais por eletricista, em quantidade de OS,
+  faturamento ou ambas, acompanhando os respectivos realizados.
+- Criar e selecionar modelos compartilhados de checklist da empresa.
+- Revisar pendências da própria equipe e registrar autorização ou negativa.
 
-## Como criar ou liberar uma conta
+## Restrições
 
-1. Entre como administrador e abra **Usuários**.
-2. Crie um usuário ou edite uma conta padrão já existente.
-3. Em **Perfil de acesso**, selecione **Supervisor** e salve.
-4. A pessoa entra com o usuário e a senha dessa conta. Se já estava conectada,
-   deve sair e entrar novamente para atualizar o menu exibido.
+Sem acesso a Usuários, Supervisores, cadastro administrativo de Eletricistas,
+Produtos, Movimentações e Baixas manuais. Materiais necessários à execução estão
+disponíveis dentro da própria OS. Supervisor sem equipe recebe listas vazias.
 
-O administrador também pode escolher **Padrão** para remover o perfil. As
-permissões são revalidadas na API a cada requisição, inclusive para tokens já
-emitidos. Uma conta vinculada a eletricista continua com seu perfil próprio;
-o último administrador não pode ser convertido em supervisor.
+A restrição vale na API, inclusive por ID, para relatórios, fotos, opções de
+atribuição e tokens já emitidos. O vínculo é consultado no banco; não é copiado
+para o JWT. A transferência leva consigo o acesso ao histórico operacional do
+eletricista. No desligamento, ele é removido da equipe; a reativação requer nova
+associação pelo administrador.
 
-## Persistência e alterações
+Uma negativa mantém a OS bloqueada. A gestão pode revisar novamente a pendência
+após a correção. Fechamento de OS bloqueada é recusado; a decisão e seu autor
+ficam no histórico. OS fechadas preservam seus dados, permitindo somente novos
+comentários/fotos anexados como registros adicionais.
 
-Não é necessária migração SQL. O perfil é identificado por uma entrada interna
-`perfil_supervisor` na tabela `tabela_usuario_permissao` existente. Esse marcador
-não aparece como um módulo na interface. Ao carregar o usuário, o sistema define
-as permissões fixas `menu`, `ordemServico`, `metas` e `checklist`.
-
-- `backend/src/shared/access.js`: identifica o supervisor e centraliza os módulos
-  fixos e a autorização para gestão de OS.
-- `backend/src/middlewares/auth.js`: autoriza administradores e supervisores a
-  solicitar OS, mantendo a gestão de usuários exclusiva do administrador.
-- `backend/src/modules/api.routes.js`: salva o perfil junto com as permissões,
-  devolve o perfil efetivo na listagem de usuários, libera a gestão de OS ao
-  supervisor e oferece `GET /metas/opcoes` com apenas ID e nome dos eletricistas
-  ativos. As alterações de conta são salvas em transação.
-- `src/pages/UsuariosPage.jsx`: oferece a seleção de perfil no cadastro e na
-  edição e mostra a identificação de Supervisor na lista de usuários.
-- `src/constants/permissoes.js` e `src/context/AuthContext.jsx`: aplicam os módulos
-  fixos também ao menu e às rotas protegidas da interface.
-- `src/pages/OrdemServicoPage.jsx`: disponibiliza a ação Solicitar OS ao supervisor.
-- `src/api/metas.js` e `src/pages/MetasPage.jsx`: buscam as opções de atribuição
-  pelo módulo de metas, sem liberar o cadastro de eletricistas.
-- `src/api/usuarios.js`: envia JSON para preservar o perfil e listas vazias de
-  permissões na edição das contas.
-
-Os pontos de decisão têm comentários no código. Nenhuma dependência foi adicionada.
-
-## Validação
-
-Foram acrescentados sete cenários aos testes existentes: perfil do supervisor,
-criação/edição/revogação do acesso, operações permitidas, cadastros bloqueados,
-opções de atribuição, navegação e ações visíveis.
-
-- Suíte completa: **50 testes aprovados**.
-- Build: concluído.
-- Lint: sem erros, com os avisos já presentes na estrutura do projeto.
-
-```sh
-npm test --prefix backend
-npm run test:unit --prefix backend
-npm run build
-npm run lint
-```
-
-A suíte de integração usa o banco em memória descrito nos testes existentes.
-O ambiente real continua usando MySQL e requer suas credenciais configuradas;
-nenhum banco de produção foi acessado durante esta alteração.
+Aplique primeiro a migração descrita em [backend/README.md](backend/README.md).
+Detalhes das regras: [docs/operacao-e-permissoes.md](docs/operacao-e-permissoes.md).

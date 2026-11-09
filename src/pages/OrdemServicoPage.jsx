@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import * as osApi from "../api/ordensServico";
 import Modal from "../components/Modal";
 import ModalDetalhesOs from "../components/ModalDetalhesOs";
 import Pagination from "../components/Pagination";
 import { Carregando, ErroCarregamento, ListaVazia } from "../components/EstadoLista";
 import { useNotificacao } from "../context/NotificacaoContext";
-import { useAuth } from "../context/AuthContext";
+import { hoje } from "../lib/formatters";
+import { useAuth } from "../context/auth-store";
 
 const POR_PAGINA = 10;
 const FILTROS = [
@@ -13,9 +14,11 @@ const FILTROS = [
   { chave: "solicitada", rotulo: "Solicitadas" },
   { chave: "aberta", rotulo: "Abertas" },
   { chave: "fechada", rotulo: "Fechadas" },
+  { chave: "bloqueada", rotulo: "Bloqueadas" },
 ];
 
 const STATUS_BADGE = {
+  bloqueada: <span className="badge bg-danger">Bloqueada</span>,
   solicitada: <span className="badge bg-warning text-dark">Solicitada</span>,
   aberta: <span className="badge bg-success">Aberta</span>,
   fechada: <span className="badge bg-secondary">Fechada</span>,
@@ -38,13 +41,23 @@ export default function OrdemServicoPage() {
   const [modalDetalhes, setModalDetalhes] = useState(false);
   const [idOsSelecionada, setIdOsSelecionada] = useState(null);
 
-  const [solicitacao, setSolicitacao] = useState({ eletricista_os: "", data_os: "" });
-  const [materiais, setMateriais] = useState([{ id_produto: "", qtd_utilizada: "" }]);
+  const [solicitacao, setSolicitacao] = useState({ eletricista_os: "", data_os: "", valor_servico: "0", descricao: "", local_servico: "" });
+  const [materiais, setMateriais] = useState([]);
   const [respostasInicio, setRespostasInicio] = useState({});
   const [respostasFim, setRespostasFim] = useState({});
   const [motivosFim, setMotivosFim] = useState({});
+  const [fotoInicio, setFotoInicio] = useState(null), [fotoFim, setFotoFim] = useState(null);
+  const [bloqueio, setBloqueio] = useState(null), [motivoBloqueio, setMotivoBloqueio] = useState("");
+  async function bloquear(e) {
+    e.preventDefault(); setSalvando(true);
+    try {
+      const { data } = await osApi.bloquearOrdemServico(bloqueio, motivoBloqueio);
+      notificar(data.mensagem); setBloqueio(null); carregar();
+    } catch (err) { notificar(err.response?.data?.mensagem || "Erro ao bloquear OS.", "erro"); }
+    finally { setSalvando(false); }
+  }
 
-  function carregar() {
+  const carregar = useCallback(() => {
     setCarregando(true);
     setErro("");
     osApi
@@ -52,11 +65,11 @@ export default function OrdemServicoPage() {
       .then((res) => setDadosPagina(res.data))
       .catch(() => setErro("Não foi possível carregar as ordens de serviço."))
       .finally(() => setCarregando(false));
-  }
+  }, [pagina, filtroStatus]);
 
   useEffect(() => {
     carregar();
-  }, [pagina, filtroStatus]);
+  }, [carregar]);
 
   const ordensServico = dadosPagina?.ordensServico ?? [];
   const eletricistasAtivos = dadosPagina?.eletricistasAtivos ?? [];
@@ -77,7 +90,7 @@ export default function OrdemServicoPage() {
       await osApi.solicitarOrdemServico(solicitacao);
       notificar("Ordem de serviço solicitada.");
       setModalSolicitar(false);
-      setSolicitacao({ eletricista_os: "", data_os: "" });
+      setSolicitacao({ eletricista_os: "", data_os: "", valor_servico: "0", descricao: "", local_servico: "" });
       carregar();
     } catch (err) {
       notificar(err.response?.data?.mensagem || "Erro ao solicitar OS.", "erro");
@@ -88,7 +101,8 @@ export default function OrdemServicoPage() {
 
   function abrirModalAbertura(idOs) {
     setIdOsSelecionada(idOs);
-    setMateriais([{ id_produto: "", qtd_utilizada: "" }]);
+    setMateriais([]);
+    setFotoInicio(null);
     setRespostasInicio({});
     setModalAbrir(true);
   }
@@ -96,6 +110,7 @@ export default function OrdemServicoPage() {
   function abrirModalFechamento(idOs) {
     setIdOsSelecionada(idOs);
     setRespostasFim({});
+    setFotoFim(null);
     setMotivosFim({});
     setModalFechar(true);
   }
@@ -121,13 +136,13 @@ export default function OrdemServicoPage() {
     e.preventDefault();
     setSalvando(true);
     try {
-      await osApi.abrirOrdemServico({
+      const { data } = await osApi.abrirOrdemServico({
         id_os: idOsSelecionada,
         id_produto: materiais.map((m) => m.id_produto),
         qtd_utilizada: materiais.map((m) => m.qtd_utilizada),
-        checklist_resposta: respostasInicio,
+        checklist_resposta: respostasInicio, foto: fotoInicio,
       });
-      notificar("Ordem de serviço aberta com sucesso.");
+      notificar(data.mensagem);
       setModalAbrir(false);
       carregar();
     } catch (err) {
@@ -141,12 +156,12 @@ export default function OrdemServicoPage() {
     e.preventDefault();
     setSalvando(true);
     try {
-      await osApi.fecharOrdemServico({
+      const { data } = await osApi.fecharOrdemServico({
         id_os: idOsSelecionada,
         checklist_resposta: respostasFim,
-        motivos: motivosFim,
+        motivos: motivosFim, foto: fotoFim,
       });
-      notificar("Ordem de serviço fechada com sucesso.");
+      notificar(data.mensagem);
       setModalFechar(false);
       carregar();
     } catch (err) {
@@ -213,10 +228,11 @@ export default function OrdemServicoPage() {
                         <i className="fa-solid fa-eye"></i>
                       </button>{" "}
                       {os.status === "solicitada" && (
-                        <button className="btn btn-sm btn-outline-warning" onClick={() => abrirModalAbertura(os.id)} title="Abrir">
+                        <button className="btn btn-sm btn-outline-warning" disabled={os.data_os > hoje()} onClick={() => abrirModalAbertura(os.id)} title={os.data_os > hoje() ? "Aguarde a data programada" : "Abrir"}>
                           <i className="fa-solid fa-play"></i>
                         </button>
                       )}
+                      {podeSolicitar && ['solicitada','aberta'].includes(os.status) && <button className="btn btn-sm btn-outline-danger ms-1" title="Bloquear OS" onClick={() => { setBloqueio(os.id); setMotivoBloqueio(''); }}><i className="fa-solid fa-ban" /></button>}
                       {os.status === "aberta" && (
                         <button className="btn btn-sm btn-outline-success" onClick={() => abrirModalFechamento(os.id)} title="Fechar">
                           <i className="fa-solid fa-check"></i>
@@ -256,10 +272,13 @@ export default function OrdemServicoPage() {
           <label>Data da operação</label>
           <input
             type="date"
-            max={new Date().toISOString().slice(0, 10)}
             value={solicitacao.data_os}
             onChange={(e) => setSolicitacao({ ...solicitacao, data_os: e.target.value })}
           />
+          <label>Descrição do serviço</label><textarea maxLength={4000} value={solicitacao.descricao} onChange={e => setSolicitacao({ ...solicitacao, descricao: e.target.value })} />
+          <label>Local do serviço</label><input maxLength={255} value={solicitacao.local_servico} onChange={e => setSolicitacao({ ...solicitacao, local_servico: e.target.value })} />
+          <label>Valor do serviço (R$)</label><input type="number" min="0" step="0.01" required value={solicitacao.valor_servico} onChange={e => setSolicitacao({ ...solicitacao, valor_servico: e.target.value })} />
+          <small className="text-muted">Este valor conta para o faturamento quando a OS for fechada.</small>
           <button type="submit" className="btn-submit mt-3" disabled={salvando}>
             {salvando ? "Enviando..." : "Solicitar"}
           </button>
@@ -269,7 +288,8 @@ export default function OrdemServicoPage() {
       {/* Modal: abrir OS */}
       <Modal aberto={modalAbrir} onFechar={() => setModalAbrir(false)} titulo="Abrir Ordem de Serviço">
         <form className="eletrotech-form" onSubmit={handleAbrir}>
-          <label>Materiais utilizados</label>
+          <label>Materiais utilizados (opcional)</label>
+          {!materiais.length && <p className="text-muted">Adicione os materiais utilizados, se houver.</p>}
           {materiais.map((m, i) => (
             <div key={i} className="d-flex gap-2 align-items-center mb-2">
               <select
@@ -296,7 +316,7 @@ export default function OrdemServicoPage() {
                 value={m.qtd_utilizada}
                 onChange={(e) => atualizarMaterial(i, "qtd_utilizada", e.target.value)}
               />
-              {materiais.length > 1 && (
+              {materiais.length > 0 && (
                 <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => removerMaterial(i)}>
                   <i className="fa-solid fa-xmark"></i>
                 </button>
@@ -342,7 +362,8 @@ export default function OrdemServicoPage() {
             </>
           )}
 
-          <button type="submit" className="btn-submit mt-3" disabled={salvando}>
+          <label>Foto de início (opcional, até 8 MB)</label><input type="file" accept="image/jpeg,image/png,image/gif,image/webp" onChange={e => setFotoInicio(e.target.files[0] || null)} />
+          <button type="submit" className="btn-submit mt-3" disabled={salvando || !checklistInicio?.perguntas?.length}>
             {salvando ? "Abrindo..." : "Abrir OS"}
           </button>
         </form>
@@ -390,12 +411,16 @@ export default function OrdemServicoPage() {
           ) : (
             <p className="text-muted">Nenhum checklist de fechamento configurado.</p>
           )}
-          <button type="submit" className="btn-submit mt-3" disabled={salvando}>
+          <label>Foto de fechamento (opcional, até 8 MB)</label><input type="file" accept="image/jpeg,image/png,image/gif,image/webp" onChange={e => setFotoFim(e.target.files[0] || null)} />
+          <button type="submit" className="btn-submit mt-3" disabled={salvando || !checklistFim?.perguntas?.length}>
             {salvando ? "Fechando..." : "Fechar OS"}
           </button>
         </form>
       </Modal>
 
+      <Modal aberto={!!bloqueio} onFechar={() => !salvando && setBloqueio(null)} titulo="Bloquear OS">
+        <form className="eletrotech-form" onSubmit={bloquear}><label>Motivo do bloqueio</label><textarea required maxLength={4000} value={motivoBloqueio} onChange={e => setMotivoBloqueio(e.target.value)} /><button className="btn-submit" disabled={salvando}>{salvando ? 'Salvando...' : 'Bloquear OS'}</button></form>
+      </Modal>
       <ModalDetalhesOs idOs={idOsSelecionada} aberto={modalDetalhes} onFechar={() => setModalDetalhes(false)} />
     </div>
   );

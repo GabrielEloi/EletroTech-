@@ -1,9 +1,9 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { AuthContext } from './auth-store';
 import * as authApi from "../api/auth";
 
 import { PERMISSOES_ELETRICISTA, PERMISSOES_SUPERVISOR } from "../constants/permissoes";
 
-const AuthContext = createContext(null);
 
 const STORAGE_KEY = "eletrotech_usuario";
 
@@ -18,6 +18,37 @@ export function AuthProvider({ children }) {
   });
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState("");
+  const [carregandoSessao, setCarregandoSessao] = useState(() => {
+    try { return !!localStorage.getItem(STORAGE_KEY); } catch { return false; }
+  });
+  const usuarioId = usuario?.id;
+
+  useEffect(() => {
+    const atualizar = e => setUsuario(e.detail);
+    window.addEventListener('eletrotech:sessao', atualizar);
+    return () => window.removeEventListener('eletrotech:sessao', atualizar);
+  }, []);
+
+  useEffect(() => {
+    let ativo = true;
+    if (!usuarioId) return;
+    async function validar() {
+      try {
+        const { data } = await authApi.getHome();
+        if (ativo) setUsuario(atual => {
+          if (atual?.id !== usuarioId) return atual;
+          let token = atual.accessToken;
+          try { token = JSON.parse(localStorage.getItem(STORAGE_KEY))?.accessToken || token; } catch { /* Usa o token atual. */ }
+          return { ...data, accessToken: token };
+        });
+      } catch (e) {
+        if (ativo && [401,403].includes(e.response?.status)) setUsuario(null);
+      } finally { if (ativo) setCarregandoSessao(false); }
+    }
+    validar();
+    window.addEventListener('focus', validar);
+    return () => { ativo = false; window.removeEventListener('focus', validar); };
+  }, [usuarioId]);
 
   useEffect(() => {
     if (usuario) {
@@ -33,6 +64,7 @@ export function AuthProvider({ children }) {
     try {
       const { data } = await authApi.login(nome, senha);
       const usuario = data.usuario ? { ...data.usuario, accessToken: data.accessToken } : data;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(usuario));
       setUsuario(usuario);
       return usuario;
     } catch (e) {
@@ -65,16 +97,7 @@ export function AuthProvider({ children }) {
     return ehAdmin || permissoes.includes(chave);
   }
 
-  const value = useMemo(
-    () => ({ usuario, setUsuario, carregando, erro, login, logout, ehAdmin, ehEletricista, ehSupervisor, permissoes, pode }),
-    [usuario, carregando, erro]
-  );
+  const value = { usuario, setUsuario, carregando, carregandoSessao: Boolean(usuario) && carregandoSessao, erro, login, logout, ehAdmin, ehEletricista, ehSupervisor, permissoes, pode };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth deve ser usado dentro de AuthProvider");
-  return ctx;
 }

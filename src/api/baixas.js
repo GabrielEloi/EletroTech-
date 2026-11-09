@@ -9,6 +9,8 @@ export function listarBaixas(filtros = {}) {
 export function detalhesBaixa(id) {
   return api.get(`/baixas/${id}`);
 }
+export const detalhesMovimentacao = id => api.get(`/movimentacoes/${id}`);
+export const opcoesMovimentacoes = () => api.get('/movimentacoes/opcoes');
 
 // POST /baixas/relatorio_misto { ids[] }
 export function relatorioMistoBaixas(ids) {

@@ -1,3 +1,5 @@
+> Registro histórico da proposta de migração. Para a implementação atual, consulte [Operação e permissões](operacao-e-permissoes.md), [Endpoints](definicao-de-endpoints.md) e [Camadas atuais](camadas-de-rotas.md).
+
 # Guia de Backend para IA — EletroTech
 
 ## Objetivo

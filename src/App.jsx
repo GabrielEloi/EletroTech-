@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "./context/AuthContext";
+import { AuthProvider } from "./context/AuthContext";
+import { useAuth } from "./context/auth-store";
 import { NotificacaoProvider } from "./context/NotificacaoContext";
 import RotaProtegida from "./components/RotaProtegida";
 
@@ -7,6 +8,8 @@ import LoginPage from "./pages/LoginPage";
 import HomePage from "./pages/HomePage";
 import MenuPage from "./pages/MenuPage";
 import UsuariosPage from "./pages/UsuariosPage";
+import SupervisoresPage from "./pages/SupervisoresPage";
+import EquipePage from "./pages/EquipePage";
 import EletricistasPage from "./pages/EletricistasPage";
 import ProdutosPage from "./pages/ProdutosPage";
 import MetasPage from "./pages/MetasPage";
@@ -33,12 +36,14 @@ export default function App() {
             <Route path="/home" element={<RotaProtegida><HomePage /></RotaProtegida>} />
             <Route path="/menu" element={<RotaProtegida permissao="menu"><MenuPage /></RotaProtegida>} />
             <Route path="/usuarios" element={<RotaProtegida permissao="adminOnly"><UsuariosPage /></RotaProtegida>} />
+            <Route path="/supervisores" element={<RotaProtegida permissao="adminOnly"><SupervisoresPage /></RotaProtegida>} />
+            <Route path="/equipe" element={<RotaProtegida permissao="supervisorOnly"><EquipePage /></RotaProtegida>} />
             <Route path="/eletricistas" element={<RotaProtegida permissao="eletricistas"><EletricistasPage /></RotaProtegida>} />
             <Route path="/produtos" element={<RotaProtegida permissao="produtos"><ProdutosPage /></RotaProtegida>} />
             <Route path="/metas" element={<RotaProtegida permissao="metas"><MetasPage /></RotaProtegida>} />
             <Route path="/ordem-servico" element={<RotaProtegida permissao="ordemServico"><OrdemServicoPage /></RotaProtegida>} />
             <Route path="/checklist" element={<RotaProtegida permissao="checklist"><ChecklistPage /></RotaProtegida>} />
-            <Route path="/consulta-checklist" element={<RotaProtegida permissao="checklist"><ConsultaChecklistPage /></RotaProtegida>} />
+            <Route path="/consulta-checklist" element={<RotaProtegida permissao="supervisorOnly"><ConsultaChecklistPage /></RotaProtegida>} />
             <Route path="/baixas" element={<RotaProtegida permissao="baixas"><BaixasPage /></RotaProtegida>} />
             <Route path="/lancamentos" element={<RotaProtegida permissao="adminOnly"><LancamentosPage /></RotaProtegida>} />
 

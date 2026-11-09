@@ -12,14 +12,16 @@ export async function requireAuth(req, _res, next) {
   catch { return next(new AppError(401, 'Token de acesso inválido ou expirado.', 'UNAUTHENTICATED')); }
   try {
     // Recarrega vínculo e permissões: tokens antigos não preservam acessos removidos.
-    const rows = await query(`SELECT u.id,u.usuario,u.is_admin,u.eletricista_id,e.nome eletricista_nome,e.data_demissao,
+    const rows = await query(`SELECT u.id,u.usuario,u.is_admin,u.eletricista_id,u.sessao_versao,e.nome eletricista_nome,e.data_demissao,
       COALESCE(JSON_ARRAYAGG(up.permissao), JSON_ARRAY()) permissoesJson
       FROM tabela_usuarios u LEFT JOIN tabela_eletricistas e ON e.id=u.eletricista_id
       LEFT JOIN tabela_usuario_permissao up ON up.usuario_id=u.id WHERE u.id=? GROUP BY u.id`, [claims.id]);
     const row = rows[0];
     if (!row) return next(new AppError(401, 'Usuário não encontrado.', 'UNAUTHENTICATED'));
+    if (Number(claims.versao || 0) !== Number(row.sessao_versao || 0)) return next(new AppError(401, 'Sessão encerrada. Entre novamente.', 'UNAUTHENTICATED'));
     if (row.eletricista_id && (row.data_demissao || !row.eletricista_nome)) return next(new AppError(403, 'Acesso desativado. Fale com o administrador.', 'INACTIVE_USER'));
     req.user = normalizedUser(row);
+    if (!req.user.isAdmin && !req.user.permissoes.length) return next(new AppError(403, 'Nenhum acesso liberado.', 'NO_PERMISSIONS'));
     next();
   } catch (error) { next(error); }
 }

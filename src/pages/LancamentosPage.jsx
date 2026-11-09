@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import * as lancamentosApi from "../api/lancamentos";
 import { Carregando, ErroCarregamento } from "../components/EstadoLista";
+import Relatorio, { TabelaMovimentacoes } from "../components/Relatorio";
+import { dataBr, mensagemErro } from "../lib/formatters";
 import { useNotificacao } from "../context/NotificacaoContext";
 
 const TIPOS = [
@@ -15,6 +17,11 @@ export default function LancamentosPage() {
   const [erro, setErro] = useState("");
   const [abaAtiva, setAbaAtiva] = useState("entrada");
   const [enviando, setEnviando] = useState(false);
+  const [relatorio, setRelatorio] = useState(null);
+  async function abrirRelatorio(id) {
+    try { const { data } = await lancamentosApi.relatorioLancamento(id); setRelatorio(data); }
+    catch (e) { notificar(mensagemErro(e),'erro'); }
+  }
 
   const [formAbrir, setFormAbrir] = useState({ data_baixa: "", id_eletricista: "", observacao: "" });
   const [formItem, setFormItem] = useState({ id_produto: "", quantidade: "", valor_unitario: "" });
@@ -93,13 +100,15 @@ export default function LancamentosPage() {
 
   async function handleFinalizar() {
     if (!window.confirm("Finalizar esta baixa? Após finalizada não poderá ser alterada.")) return;
+    setEnviando(true);
     try {
       await lancamentosApi.finalizarLancamento(rascunho.id);
       notificar("Baixa finalizada com sucesso.");
+      await abrirRelatorio(rascunho.id);
       carregar();
     } catch (err) {
       notificar(err.response?.data?.mensagem || "Erro ao finalizar baixa.", "erro");
-    }
+    } finally { setEnviando(false); }
   }
 
   function selecionarProduto(idProduto) {
@@ -261,12 +270,17 @@ export default function LancamentosPage() {
             <button className="btn btn-outline-danger" onClick={handleCancelar}>
               Cancelar Baixa
             </button>
-            <button className="btn btn-eletrotech" onClick={handleFinalizar} disabled={itens.length === 0}>
+            <button className="btn btn-eletrotech" onClick={handleFinalizar} disabled={enviando || itens.length === 0}>
               Finalizar Baixa
             </button>
           </div>
         </div>
       )}
+      <h3 className="mt-4">Histórico de baixas</h3>
+      <div className="table-responsive"><table className="table table-dark table-bordered text-center"><thead><tr><th>Relatório</th><th>Baixa</th><th>Data</th><th>Tipo</th><th>Eletricista</th><th>Status</th></tr></thead><tbody>{(dados?.historico || []).map(b => <tr key={b.id}><td><button className="btn btn-sm btn-outline-info" onClick={() => abrirRelatorio(b.id)}>Ver relatório</button></td><td>#{b.id}</td><td>{dataBr(b.data_baixa)}</td><td>{b.tipo}</td><td>{b.nome_eletricista}</td><td>{b.status}</td></tr>)}</tbody></table></div>
+      <Relatorio aberto={!!relatorio} onFechar={() => setRelatorio(null)} titulo={`Baixa #${relatorio?.id || ''}`}>
+        {relatorio && <><p>Eletricista: {relatorio.nome_eletricista} · Data: {dataBr(relatorio.data_baixa)} · Status: {relatorio.status}</p><p>{relatorio.observacao}</p><TabelaMovimentacoes itens={relatorio.itens.map(i => ({ ...i, tipo: relatorio.tipo, data_baixa: relatorio.data_baixa }))} /></>}
+      </Relatorio>
     </div>
   );
 }
