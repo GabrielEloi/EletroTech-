@@ -1,144 +1,34 @@
 import { query } from '../config/database.js';
+import { electricianScope } from '../shared/scope.js';
+import { periodBounds } from '../shared/validation.js';
 
-const temFiltro = (id) => id !== null && id !== undefined && id !== '';
-
-async function contarTotais(idEletricista = null) {
-  const totais = { eletricistas: 0, produtos: 0, os: 0, metas: 0 };
-
-  if (temFiltro(idEletricista)) {
-    const [row] = await query(
-      'SELECT COUNT(*) AS total FROM tabela_ordens_servico WHERE eletricista_os = ?',
-      [Number(idEletricista)]
-    );
-    totais.os = Number(row.total);
-    // Soma apenas as metas atribuídas ao responsável autenticado.
-    const [meta] = await query('SELECT COALESCE(SUM(vlr_meta),0) AS total FROM tabela_metas WHERE eletricista_meta=?', [Number(idEletricista)]);
-    totais.metas = Number(meta.total);
-    return totais;
-  }
-
-  const [el] = await query(
-    'SELECT COUNT(*) AS total FROM tabela_eletricistas WHERE data_demissao IS NULL'
-  );
-  const [pr] = await query('SELECT COUNT(*) AS total FROM tabela_produtos');
-  const [os] = await query('SELECT COUNT(*) AS total FROM tabela_ordens_servico');
-  const [me] = await query('SELECT COALESCE(SUM(vlr_meta), 0) AS total FROM tabela_metas');
-
-  totais.eletricistas = Number(el.total);
-  totais.produtos = Number(pr.total);
-  totais.os = Number(os.total);
-  totais.metas = Number(me.total);
-  return totais;
+export async function dashboardData(user, month) {
+  const scope = electricianScope(user, 'os.eletricista_os', { allowStandard: true });
+  const dates = month ? periodBounds(month) : [];
+  const where = `${scope.sql}${month ? ' AND os.data_os>=? AND os.data_os<?' : ''}`;
+  const params = [...scope.params, ...dates];
+  const closedWhere = `${scope.sql} AND os.status='fechada'${month ? ' AND os.data_fechamento>=? AND os.data_fechamento<?' : ''}`;
+  const electricScope = electricianScope(user, 'e.id', { allowStandard: true });
+  const [counts, closed, electricians, products, byElectrician, byMonth, byStatus, movements, materials] = await Promise.all([
+    query(`SELECT COUNT(*) total FROM tabela_ordens_servico os WHERE ${where}`, params),
+    query(`SELECT COUNT(*) total,COALESCE(SUM(os.valor_servico),0) faturamento FROM tabela_ordens_servico os WHERE ${closedWhere}`, params),
+    query(`SELECT COUNT(*) total FROM tabela_eletricistas e WHERE e.data_demissao IS NULL AND ${electricScope.sql}`, electricScope.params),
+    user.isAdmin ? query('SELECT COUNT(*) total FROM tabela_produtos') : query(`SELECT COUNT(DISTINCT om.id_produto) total FROM tabela_os_materiais om JOIN tabela_ordens_servico os ON os.id=om.id_os WHERE ${where}`, params),
+    query(`SELECT e.nome eletricista,COUNT(os.id) total FROM tabela_ordens_servico os JOIN tabela_eletricistas e ON e.id=os.eletricista_os WHERE ${where} GROUP BY e.id,e.nome ORDER BY total DESC`, params),
+    query(`SELECT DATE_FORMAT(os.data_os,'%Y-%m') mes,COUNT(*) total FROM tabela_ordens_servico os WHERE ${where} GROUP BY DATE_FORMAT(os.data_os,'%Y-%m') ORDER BY mes`, params),
+    query(`SELECT os.status,COUNT(*) total FROM tabela_ordens_servico os WHERE ${where} GROUP BY os.status`, params),
+    query(`SELECT DATE_FORMAT(m.data_mov,'%Y-%m') mes,
+      SUM(CASE WHEN m.tipo='entrada' THEN m.quantidade*m.valor_unitario ELSE 0 END) entrada,
+      SUM(CASE WHEN m.tipo='saida' THEN m.quantidade*m.valor_unitario ELSE 0 END) saida
+      FROM tabela_movimentacoes m LEFT JOIN tabela_ordens_servico os ON os.id=m.id_os
+      WHERE ${user.isAdmin ? '1=1' : scope.sql}${month ? ' AND m.data_mov>=? AND m.data_mov<?' : ''}
+      GROUP BY DATE_FORMAT(m.data_mov,'%Y-%m') ORDER BY mes`, [...(user.isAdmin ? [] : scope.params), ...dates]),
+    query(`SELECT COALESCE(SUM(om.qtd_utilizada),0) total FROM tabela_os_materiais om JOIN tabela_ordens_servico os ON os.id=om.id_os WHERE ${where}`, params),
+  ]);
+  return {
+    totais: { eletricistas: Number(electricians[0].total), produtos: Number(products[0].total), os: Number(counts[0].total), osFechadas: Number(closed[0].total), faturamentoRealizado: Number(closed[0].faturamento) },
+    graficoEletricista: byElectrician, graficoMes: byMonth,
+    graficoStatus: { solicitada: 0, aberta: 0, bloqueada: 0, fechada: 0, ...Object.fromEntries(byStatus.map(r => [r.status, Number(r.total)])) },
+    graficoMovimentacao: movements, produtosUtilizados: Number(materials[0].total),
+  };
 }
-
-async function contarProdutosUtilizados(idEletricista = null) {
-  let sql = `
-    SELECT COALESCE(SUM(om.qtd_utilizada), 0) AS total
-    FROM tabela_os_materiais om
-    LEFT JOIN tabela_ordens_servico os ON os.id = om.id_os`;
-  const params = [];
-
-  if (temFiltro(idEletricista)) {
-    sql += ' WHERE os.eletricista_os = ?';
-    params.push(Number(idEletricista));
-  }
-
-  const [row] = await query(sql, params);
-  return Number(row.total);
-}
-
-async function getMetaAtual(idEletricista) {
-  const now = new Date();
-  const mesAtual = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-
-  const rows = await query(
-    'SELECT vlr_meta FROM tabela_metas WHERE eletricista_meta = ? AND mes_meta = ? LIMIT 1',
-    [Number(idEletricista), mesAtual]
-  );
-  return rows.length ? Number(rows[0].vlr_meta) : 0;
-}
-
-async function getOsPorEletricista(idEletricista = null) {
-  let sql = `
-    SELECT e.nome AS eletricista, COUNT(os.id) AS total
-    FROM tabela_ordens_servico os
-    LEFT JOIN tabela_eletricistas e ON e.id = os.eletricista_os`;
-  const params = [];
-
-  if (temFiltro(idEletricista)) {
-    sql += ' WHERE os.eletricista_os = ?';
-    params.push(Number(idEletricista));
-  }
-  sql += ' GROUP BY e.id, e.nome ORDER BY total DESC';
-
-  const rows = await query(sql, params);
-  return rows.map((r) => ({ eletricista: r.eletricista, total: Number(r.total) }));
-}
-
-async function getMovimentacaoPorMes(idEletricista = null) {
-  let sql = `
-    SELECT DATE_FORMAT(m.data_mov, '%Y-%m') AS mes,
-      SUM(CASE WHEN m.tipo = 'entrada' THEN m.quantidade * m.valor_unitario ELSE 0 END) AS entrada,
-      SUM(CASE WHEN m.tipo = 'saida'   THEN m.quantidade * m.valor_unitario ELSE 0 END) AS saida
-    FROM tabela_movimentacoes m`;
-  const params = [];
-
-  if (temFiltro(idEletricista)) {
-    sql += ' LEFT JOIN tabela_ordens_servico os ON os.id = m.id_os WHERE os.eletricista_os = ?';
-    params.push(Number(idEletricista));
-  }
-  sql += " GROUP BY DATE_FORMAT(m.data_mov, '%Y-%m') ORDER BY mes ASC";
-
-  const rows = await query(sql, params);
-  return rows.map((r) => ({ mes: r.mes, entrada: Number(r.entrada), saida: Number(r.saida) }));
-}
-
-async function getOsPorStatus(idEletricista = null) {
-  let sql = 'SELECT status, COUNT(id) AS total FROM tabela_ordens_servico';
-  const params = [];
-
-  if (temFiltro(idEletricista)) {
-    sql += ' WHERE eletricista_os = ?';
-    params.push(Number(idEletricista));
-  }
-  sql += ' GROUP BY status';
-
-  const rows = await query(sql, params);
-  const resultado = { solicitada: 0, aberta: 0, fechada: 0 };
-  for (const r of rows) resultado[r.status] = Number(r.total);
-  return resultado;
-}
-
-async function getOsPorMes(mes = null, idEletricista = null) {
-  const where = [];
-  const params = [];
-
-  if (temFiltro(idEletricista)) {
-    where.push('eletricista_os = ?');
-    params.push(Number(idEletricista));
-  }
-  if (mes) {
-    where.push("DATE_FORMAT(data_os, '%Y-%m') = ?");
-    params.push(mes);
-  }
-
-  const sql = `
-    SELECT DATE_FORMAT(data_os, '%Y-%m') AS mes, COUNT(id) AS total
-    FROM tabela_ordens_servico
-    ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
-    GROUP BY DATE_FORMAT(data_os, '%Y-%m')
-    ORDER BY mes ASC`;
-
-  const rows = await query(sql, params);
-  return rows.map((r) => ({ mes: r.mes, total: Number(r.total) }));
-}
-
-export {
-  contarTotais,
-  contarProdutosUtilizados,
-  getMetaAtual,
-  getOsPorEletricista,
-  getMovimentacaoPorMes,
-  getOsPorStatus,
-  getOsPorMes,
-};

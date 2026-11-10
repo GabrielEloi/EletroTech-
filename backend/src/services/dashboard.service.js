@@ -1,49 +1,20 @@
-import * as repo from '../repository/dashboard.repository.js';
-import { AppError } from '../shared/http.js';
+import { dashboardData } from '../repository/dashboard.repository.js';
+import { listGoals } from '../modules/metas/metas.service.js';
+import { month, today } from '../shared/validation.js';
 
-/**
- * user: { id, usuario, nome_exibicao, is_admin, eletricista_id, permissoes }
- * Admin vê tudo; usuário vinculado a eletricista vê só os próprios dados.
- */
-async function obterDashboard(user, { mes } = {}) {
-  if (mes && !/^\d{4}-(0[1-9]|1[0-2])$/.test(mes)) throw new AppError(422, 'Mês inválido, use YYYY-MM.', 'VALIDATION_ERROR');
-  const ehAdmin = !!user.is_admin;
-  const eletricistaId = user.eletricista_id ? Number(user.eletricista_id) : null;
-  const filtro = !ehAdmin && eletricistaId ? eletricistaId : null;
-
-  const [totais, graficoEletricista, graficoMes, graficoStatus, graficoMovimentacao] =
-    await Promise.all([
-      repo.contarTotais(filtro),
-      repo.getOsPorEletricista(filtro),
-      repo.getOsPorMes(mes, filtro),
-      repo.getOsPorStatus(filtro),
-      repo.getMovimentacaoPorMes(filtro),
-    ]);
-
-  const data = {
-    perfil: user.perfil,
-    usuario: user.nome || user.usuario,
-    mesFiltro: mes || '',
-    totais,
-    graficoEletricista,
-    graficoMes,
-    graficoStatus,
-    graficoMovimentacao,
+export async function obterDashboard(user, { mes } = {}) {
+  if (mes) month(mes);
+  const current = mes || today().slice(0, 7);
+  const [data, monthly, annual] = await Promise.all([
+    dashboardData(user, mes),
+    listGoals(user, { tipo_periodo: 'mensal', periodo: current }),
+    listGoals(user, { tipo_periodo: 'anual', periodo: current.slice(0, 4) }),
+  ]);
+  data.totais.metas = monthly.reduce((sum, m) => sum + Number(m.vlr_meta), 0);
+  data.totais.metaOs = monthly.reduce((sum, m) => sum + Number(m.qtd_os_meta || 0), 0);
+  if (user.eletricistaId) data.eletricistaDashboard = {
+    totalOs: data.totais.osFechadas, produtosUtilizados: data.produtosUtilizados,
+    metaAtual: data.totais.metas, metaOs: data.totais.metaOs, faturamentoRealizado: data.totais.faturamentoRealizado,
   };
-
-  if (filtro) {
-    const [produtosUtilizados, metaAtual] = await Promise.all([
-      repo.contarProdutosUtilizados(filtro),
-      repo.getMetaAtual(filtro),
-    ]);
-    data.eletricistaDashboard = {
-      totalOs: totais.os,
-      produtosUtilizados,
-      metaAtual,
-    };
-  }
-
-  return data;
+  return { ...data, metas: [...monthly, ...annual], perfil: user.perfil, usuario: user.nome || user.usuario, mesFiltro: mes || '' };
 }
-
-export { obterDashboard };

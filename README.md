@@ -1,75 +1,89 @@
-# EletroTech — Frontend (React)
+# EletroTech
 
-> Perfil de supervisor: veja [ACESSO_SUPERVISOR.md](ACESSO_SUPERVISOR.md) para permissões e ativação.
->
-> Acesso de eletricista na versão React/Node: veja [ACESSO_ELETRICISTA.md](ACESSO_ELETRICISTA.md) para ativação, execução e validação.
+Gestão de serviços externos de energia, com uma empresa por instalação.
+Frontend React/Vite e API Express/MySQL. O visual original preto e amarelo foi
+preservado. Administrador, supervisor e eletricista usam a mesma tela de login.
 
-Este é o **frontend React** do sistema EletroTech, reconstruído a partir das telas PHP/CodeIgniter originais (`views/telas/*.php`).
+## Documentação atual
 
-## ⚠️ Importante — leia antes de rodar
+- [Regras e permissões confirmadas](docs/operacao-e-permissoes.md)
+- [Instalação e atualização do banco](backend/README.md)
+- [Endpoints da API](docs/definicao-de-endpoints.md)
+- [Caminho das requisições](docs/camadas-de-rotas.md)
+- [Guia do supervisor](ACESSO_SUPERVISOR.md)
+- [Guia do eletricista](ACESSO_ELETRICISTA.md)
+- [Validação e testes](TESTES_UNITARIOS.md)
 
-O projeto original (`EletroTech--main`) é uma aplicação **PHP monolítica**: o backend (CodeIgniter 3) renderiza HTML diretamente, ele **não expõe uma API JSON**. Não existia, portanto, um "frontend" para simplesmente extrair — o que foi feito aqui foi **reconstruir todas as 17 telas em React**, com o mesmo visual (tema escuro preto/amarelo, tipografia, ícones) e já preparado para consumir uma API.
+`docs/guia-backend-para-ia.md` preserva a proposta histórica de migração.
+A implementação atual e seus contratos estão nos documentos acima.
+O Word em `docs` é mantido como documentação acadêmica do projeto.
 
-Isso significa duas coisas:
+## Executar
 
-1. **Sem dados mockados**: nenhuma tela usa dados fictícios/hardcoded. Todas buscam dados reais via `axios`, chamando as rotas do backend CodeIgniter (ex.: `/index.php/produtos`, `/index.php/ordemServico`, etc. — ver `src/api/*.js`). Enquanto o backend não retornar JSON nesses endpoints, as telas vão mostrar "carregando" e depois um estado vazio/erro — isso é esperado e intencional, não é um bug.
-2. **Passo pendente no backend**: para o app funcionar de ponta a ponta, os métodos dos controllers do CodeIgniter (`UsuariosController`, `ProdutosController`, `OrdensServicoController`, etc.) precisam devolver JSON (`$this->output->set_content_type('application/json')->set_output(json_encode($dados))`) em vez de `$this->load->view(...)`, mantendo a mesma lógica de negócio e nomes de campos já usados em `src/api/*.js` (documentados em comentário em cada função). Isso é trabalho de backend e foi propositalmente deixado de fora, já que você pediu só o front.
+Requisitos: Node.js 22.12+ (validado com Node 24.16), npm e MySQL 8.
 
-## Stack
+```sh
+npm ci
+npm ci --prefix backend
+cp .env.example .env
+cp backend/.env.example backend/.env
+```
 
-- React 18 + Vite
-- React Router DOM (rotas e proteção por permissão/login)
-- Axios (requisições HTTP, com suporte a cookie de sessão do CodeIgniter via `withCredentials`)
-- Bootstrap 5 + CSS original do projeto (copiado de `assets/css`)
-- Chart.js / react-chartjs-2 (gráficos do dashboard)
+Preencha as credenciais do banco e `JWT_SECRET` em `backend/.env`. Uma instalação
+utiliza seu próprio banco; não há cadastro de várias empresas na mesma base.
 
-## Como rodar
+Para banco já existente, aplique a migração aditiva:
 
-```bash
-npm install
-cp .env.example .env   # ajuste VITE_API_URL para a URL do seu backend PHP
+```sh
+npm run db:migrate --prefix backend
+```
+
+Para banco vazio, crie primeiro o database no MySQL e execute:
+
+```sh
+npm run db:init --prefix backend
+npm run db:migrate --prefix backend
+npm run db:admin --prefix backend
+```
+
+O último comando solicita nome e senha para criar um administrador, sem senha
+padrão. O schema inicial não contém dados pessoais nem registros de exemplo.
+
+Em terminais separados:
+
+```sh
+npm run dev --prefix backend
+```
+
+```sh
 npm run dev
 ```
 
-Edite `.env`:
+API padrão: `http://localhost:3001/api/v1`. O frontend aceita `/api/v1` pelo
+proxy do Vite ou `VITE_API_URL` apontando à API. Mantenha a mesma porta em todas
+as configurações; `VITE_API_PROXY_TARGET` permite ajustar o destino do proxy. Em produção, publique a API e o frontend na mesma origem por
+reverse proxy e use HTTPS.
+
+## Operação inicial
+
+1. Admin cadastra os eletricistas e suas senhas.
+2. Em **Supervisores**, cria os logins e associa os eletricistas ativos.
+3. Define um checklist padrão de início e outro de fim, com perguntas.
+4. Supervisor atribui OS à sua equipe e estabelece metas mensais e anuais.
+5. Eletricista executa suas OS, registra materiais, checklists e fotos.
+6. Supervisor acompanha **Minha equipe** e decide pendências de bloqueio.
+
+Eletricistas sem supervisor continuam acessando seus próprios dados. Um
+supervisor sem equipe não recebe os dados globais.
+
+## Verificar
+
+```sh
+npm test --prefix backend
+npm run build
+npm run lint
 ```
-VITE_API_URL=http://localhost/eletrotech-ci/index.php
-```
 
-## Estrutura
-
-```
-src/
-  api/            -> um arquivo por módulo do backend (auth, produtos, usuarios, ordensServico, ...)
-  assets/css/     -> CSS original do EletroTech + tema global extraído das telas PHP
-  components/     -> Navbar, Layout, Modal, Pagination, Chatbot, estados de loading/erro/vazio
-  context/        -> AuthContext (login/permissões) e NotificacaoContext (toasts)
-  pages/          -> uma página por tela do sistema
-  constants/      -> lista de permissões do sistema (espelha permissoes_helper.php)
-```
-
-## Telas migradas (17 telas do PHP original)
-
-| Tela original (PHP) | Página React |
-|---|---|
-| LoginView | `pages/LoginPage.jsx` |
-| HomeView | `pages/HomePage.jsx` |
-| MenuView + DashboardEletricista | `pages/MenuPage.jsx` (dashboard admin e do eletricista) |
-| UsuariosView | `pages/UsuariosPage.jsx` |
-| EletricistasView | `pages/EletricistasPage.jsx` |
-| ProdutosView | `pages/ProdutosPage.jsx` |
-| MetasView | `pages/MetasPage.jsx` |
-| OrdemServicoView + Detalhes | `pages/OrdemServicoPage.jsx` + `components/ModalDetalhesOs.jsx` |
-| ChecklistView | `pages/ChecklistPage.jsx` |
-| ConsultaChecklistView | `pages/ConsultaChecklistPage.jsx` |
-| BaixasView | `pages/BaixasPage.jsx` |
-| LancamentosView | `pages/LancamentosPage.jsx` |
-| BaixaDetalheView, BaixaRelatorioMistoView, LancamentoRelatorioView | Mantidas como **links diretos para o backend** (abrem em nova aba), pois são relatórios/documentos para impressão gerados server-side — não fazem sentido como estado de React |
-
-## Permissões
-
-O controle de acesso replica `permissoes_helper.php`: administradores veem tudo; demais usuários só veem os módulos liberados (`menu`, `ordemServico`, `checklist`, `produtos`, `baixas`, `metas`, `eletricistas`), guardados em `AuthContext`.
-
-
-
-Testando
+A suíte principal usa SQLite em memória. A verificação opt-in `test:mysql` também
+foi executada em MySQL 8.0.44, incluindo abertura concorrente de OS. A instalação
+com os dados reais requer aplicar a migração e homologar sua configuração.

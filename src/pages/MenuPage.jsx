@@ -9,7 +9,8 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/auth-store";
+import ResumoMetas from "../components/ResumoMetas";
 import { getMenu } from "../api/menu";
 import { Carregando, ErroCarregamento } from "../components/EstadoLista";
 
@@ -94,7 +95,7 @@ export default function MenuPage() {
             <div className="card-eletrotech">
               <i className="fa-solid fa-clipboard-list icon-metric"></i>
               <div className="metric-value">{eletricistaDashboard.totalOs ?? 0}</div>
-              <div className="metric-label">OSs Realizadas</div>
+              <div className="metric-label">OSs Concluídas</div>
             </div>
           </div>
           <div className="col-md-6 col-lg-3">
@@ -122,6 +123,7 @@ export default function MenuPage() {
           </div>
         </div>
 
+        <ResumoMetas metas={dados?.metas} />
         <div className="row g-4 mt-1">
           <div className="col-12">
             <div className="painel painel-destaque">
@@ -183,14 +185,14 @@ export default function MenuPage() {
           <div className="card-eletrotech">
             <i className="fa-solid fa-box-open icon-metric"></i>
             <div className="metric-value">{totais.produtos ?? 0}</div>
-            <div className="metric-label">Produtos Cadastrados</div>
+            <div className="metric-label">{ehAdmin ? "Produtos Cadastrados" : "Tipos de Materiais Utilizados"}</div>
           </div>
         </div>
         <div className="col-md-6 col-lg-3">
           <div className="card-eletrotech">
             <i className="fa-solid fa-clipboard-list icon-metric"></i>
-            <div className="metric-value">{totais.os ?? 0}</div>
-            <div className="metric-label">OS Realizadas</div>
+            <div className="metric-value">{totais.osFechadas ?? 0}</div>
+            <div className="metric-label">OS Concluídas</div>
           </div>
         </div>
         <div className="col-md-6 col-lg-3">
@@ -199,12 +201,13 @@ export default function MenuPage() {
             <div className="metric-value">
               R$ {Number(totais.metas ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
             </div>
-            <div className="metric-label">Metas Atingidas</div>
+            <div className="metric-label">Meta de Faturamento (mês)</div>
           </div>
         </div>
       </div>
 
-      <div className="row g-4 mt-1">
+      <ResumoMetas metas={dados?.metas} />
+        <div className="row g-4 mt-1">
         <div className="col-lg-6">
           <div className="painel painel-destaque">
             <h3 style={{ color: "#FBD814" }}>OS por eletricista</h3>
@@ -258,13 +261,13 @@ export default function MenuPage() {
         <div className="col-lg-6">
           <div className="painel painel-destaque">
             <h3 style={{ color: "#FBD814" }}>Status das ordens de serviço</h3>
-            {(graficoStatus.solicitada || graficoStatus.aberta || graficoStatus.fechada) ? (
+            {(graficoStatus.solicitada || graficoStatus.aberta || graficoStatus.fechada || graficoStatus.bloqueada) ? (
               <Doughnut
                 data={{
-                  labels: ["Solicitadas", "Abertas", "Fechadas"],
+                  labels: ["Solicitadas", "Abertas", "Fechadas", "Bloqueadas"],
                   datasets: [{
-                    data: [Number(graficoStatus.solicitada || 0), Number(graficoStatus.aberta || 0), Number(graficoStatus.fechada || 0)],
-                    backgroundColor: ["#FBD814", "#f8a81e", "#4ade80"],
+                    data: [Number(graficoStatus.solicitada || 0), Number(graficoStatus.aberta || 0), Number(graficoStatus.fechada || 0), Number(graficoStatus.bloqueada || 0)],
+                    backgroundColor: ["#FBD814", "#f8a81e", "#4ade80", "#dc3545"],
                     borderColor: "#282828",
                     borderWidth: 2,
                   }],

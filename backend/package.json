@@ -6,8 +6,12 @@
   "scripts": {
     "dev": "node src/server.js",
     "start": "node src/server.js",
+    "db:migrate": "node src/database/migrate.js",
+    "db:init": "node src/database/init.js",
+    "db:admin": "node src/database/create-admin.js",
     "test": "vitest run",
-    "test:unit": "vitest run test/unit"
+    "test:unit": "vitest run test/unit",
+    "test:mysql": "node test/mysql.integration.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

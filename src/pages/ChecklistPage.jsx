@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import * as checklistApi from "../api/checklist";
+import { useAuth } from "../context/auth-store";
 import Modal from "../components/Modal";
 import Pagination from "../components/Pagination";
 import { Carregando, ErroCarregamento, ListaVazia } from "../components/EstadoLista";
@@ -13,6 +14,8 @@ function perguntaVazia() {
 
 export default function ChecklistPage() {
   const { notificar } = useNotificacao();
+  const { ehAdmin, ehSupervisor } = useAuth();
+  const podeGerenciar = ehAdmin || ehSupervisor;
   const [checklists, setChecklists] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
@@ -140,11 +143,11 @@ export default function ChecklistPage() {
         <p>Modelos de checklist para abertura e fechamento de OS.</p>
       </div>
 
-      <div id="acoes_id">
+      {podeGerenciar && <div id="acoes_id">
         <button type="button" onClick={() => setModalNovo(true)}>
           <i className="fa-solid fa-plus"></i> Novo Checklist
         </button>
-      </div>
+      </div>}
 
       <form onSubmit={handleFiltrar} className="filtro-mes justify-content-center">
         <div>
@@ -198,9 +201,9 @@ export default function ChecklistPage() {
                       <button className="btn btn-sm btn-outline-info" onClick={() => handleVerPerguntas(c.id)} title="Ver perguntas">
                         <i className="fa-solid fa-list"></i>
                       </button>{" "}
-                      <button className="btn btn-sm btn-outline-danger" onClick={() => handleExcluir(c.id)} title="Excluir">
+                      {podeGerenciar && <button className="btn btn-sm btn-outline-danger" onClick={() => handleExcluir(c.id)} title="Excluir">
                         <i className="fa-solid fa-trash"></i>
-                      </button>
+                      </button>}
                     </td>
                     <td>{c.id}</td>
                     <td>{c.titulo}</td>
@@ -209,11 +212,11 @@ export default function ChecklistPage() {
                     <td>
                       {c.selecionado ? (
                         <span className="badge" style={{ backgroundColor: "#FBD814", color: "#282828" }}>Padrão atual</span>
-                      ) : (
+                      ) : podeGerenciar ? (
                         <button className="btn btn-sm btn-outline-warning" onClick={() => handleSelecionar(c)}>
                           Definir como padrão
                         </button>
-                      )}
+                      ) : "—"}
                     </td>
                   </tr>
                 ))

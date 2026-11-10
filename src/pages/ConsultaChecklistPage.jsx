@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import * as consultaApi from "../api/consultaChecklist";
-import * as eletricistasApi from "../api/eletricistas";
+import Relatorio from "../components/Relatorio";
+import { dataBr } from "../lib/formatters";
 import Modal from "../components/Modal";
 import { Carregando, ErroCarregamento, ListaVazia } from "../components/EstadoLista";
 import { useNotificacao } from "../context/NotificacaoContext";
@@ -20,6 +21,11 @@ export default function ConsultaChecklistPage() {
   const [selecionado, setSelecionado] = useState({ id_os: null, tipo: "" });
   const [observacao, setObservacao] = useState("");
   const [enviando, setEnviando] = useState(false);
+  const [relatorio, setRelatorio] = useState(null);
+  async function abrirRelatorio(id, tipo) {
+    try { const { data } = await consultaApi.relatorioChecklist(id,tipo); setRelatorio(data); }
+    catch (err) { notificar(err.response?.data?.mensagem || 'Erro ao carregar relatório.', 'erro'); }
+  }
 
   function carregar(filtros = {}) {
     setCarregando(true);
@@ -37,8 +43,8 @@ export default function ConsultaChecklistPage() {
 
   useEffect(() => {
     carregar();
-    eletricistasApi
-      .listarEletricistas()
+    consultaApi
+      .opcoesConsultaChecklist()
       .then((res) => setEletricistas(res.data?.eletricistas ?? res.data ?? []))
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -69,13 +75,13 @@ export default function ConsultaChecklistPage() {
     }
     setEnviando(true);
     try {
-      await consultaApi.finalizarConsultaChecklist({
+      const { data } = await consultaApi.finalizarConsultaChecklist({
         id_os: selecionado.id_os,
         tipo: selecionado.tipo,
         observacao,
         acao,
       });
-      notificar(acao === "autorizar" ? "OS autorizada." : "OS negada.");
+      notificar(data.mensagem);
       setModalFinalizar(false);
       carregar();
     } catch (err) {
@@ -150,22 +156,14 @@ export default function ConsultaChecklistPage() {
               lista.map((c) => (
                 <tr key={`${c.id_os}-${c.tipo}`}>
                   <td>
-                    <a
-                      href={`${import.meta.env.VITE_API_URL || "/index.php"}/consultachecklist/relatorio/${c.id_os}/${c.tipo}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="btn btn-sm btn-outline-info"
-                      title="Gerar relatório"
-                    >
-                      <i className="fa-solid fa-file-lines"></i>
-                    </a>{" "}
+                    <button type="button" onClick={() => abrirRelatorio(c.id_os,c.tipo)} className="btn btn-sm btn-outline-info" title="Gerar relatório"><i className="fa-solid fa-file-lines" /></button>{" "}
                     <button className="btn btn-sm btn-outline-warning" onClick={() => abrirModalFinalizar(c.id_os, c.tipo)}>
                       Decidir
                     </button>
                   </td>
                   <td>{c.id_os}</td>
                   <td>{c.nome_eletricista}</td>
-                  <td className="text-capitalize">{c.tipo}</td>
+                  <td>{c.origem === "manual" ? "Bloqueio manual" : c.tipo}<small className="d-block">{c.decisao === "negar" ? "Negada: permanece bloqueada" : "Aguardando revisão"}</small></td>
                   <td>{c.status_os}</td>
                   <td>{c.data_bloqueio ? new Date(c.data_bloqueio).toLocaleString("pt-BR") : "-"}</td>
                 </tr>
@@ -177,6 +175,9 @@ export default function ConsultaChecklistPage() {
         </table>
       )}
 
+      <Relatorio aberto={!!relatorio} onFechar={() => setRelatorio(null)} titulo={`Checklist da OS #${relatorio?.ordem?.id || ''}`}>
+        {relatorio && <><p>Eletricista: {relatorio.ordem.nome_eletricista} · Data: {dataBr(relatorio.ordem.data_os)} · Status: {relatorio.ordem.status}</p><p>Tipo: {relatorio.tipo} · Origem: {relatorio.pendencia?.origem || 'Checklist'}</p><p>Observação: {relatorio.pendencia?.observacao || '—'}</p><table className="table table-dark table-bordered"><thead><tr><th>Pergunta</th><th>Resposta</th><th>Justificativa</th></tr></thead><tbody>{relatorio.respostas.map(r => <tr key={r.id}><td>{r.texto_pergunta}</td><td>{r.resposta}</td><td>{r.motivo_nao || '—'}</td></tr>)}</tbody></table></>}
+      </Relatorio>
       <Modal aberto={modalFinalizar} onFechar={() => setModalFinalizar(false)} titulo="Decidir Pendência de Checklist">
         <div className="eletrotech-form">
           <label>Observação</label>

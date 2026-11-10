@@ -1,8 +1,8 @@
 import api from "./client";
 
 // GET /usuarios - lista de usuários
-export function listarUsuarios() {
-  return api.get("/usuarios");
+export function listarUsuarios(filtros = {}) {
+  return api.get("/usuarios", { params: filtros });
 }
 
 // POST /usuarios/criar { usuario, senha, is_admin, permissoes[], eletricista_id }

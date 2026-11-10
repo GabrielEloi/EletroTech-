@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/auth-store";
 import { getHome } from "../api/auth";
 import logo from "../assets/img/logo-eletrotech.png";
 import { Carregando } from "../components/EstadoLista";

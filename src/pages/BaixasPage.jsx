@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import * as baixasApi from "../api/baixas";
-import * as produtosApi from "../api/produtos";
+import Relatorio, { TabelaMovimentacoes } from "../components/Relatorio";
+import { dataBr, mensagemErro } from "../lib/formatters";
+import { useNotificacao } from "../context/NotificacaoContext";
 import { Carregando, ErroCarregamento, ListaVazia } from "../components/EstadoLista";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/auth-store";
 
-const API_BASE = import.meta.env.VITE_API_URL || "/index.php";
 
 export default function BaixasPage() {
   const { ehAdmin } = useAuth();
+  const { notificar } = useNotificacao();
+  const [relatorio, setRelatorio] = useState(null);
   const [movimentacoes, setMovimentacoes] = useState([]);
   const [produtos, setProdutos] = useState([]);
   const [carregando, setCarregando] = useState(true);
@@ -21,15 +24,15 @@ export default function BaixasPage() {
     setErro("");
     baixasApi
       .listarBaixas({ consultar: 1, ...novosFiltros })
-      .then((res) => setMovimentacoes(res.data?.movimentacoes ?? res.data ?? []))
+      .then((res) => { setMovimentacoes(res.data?.movimentacoes ?? res.data ?? []); setSelecionados([]); })
       .catch(() => setErro("Não foi possível carregar as movimentações."))
       .finally(() => setCarregando(false));
   }
 
   useEffect(() => {
     carregar();
-    produtosApi
-      .listarProdutos()
+    baixasApi
+      .opcoesMovimentacoes()
       .then((res) => setProdutos(res.data?.produtos ?? res.data ?? []))
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -50,22 +53,14 @@ export default function BaixasPage() {
     setSelecionados((lista) => (lista.includes(id) ? lista.filter((i) => i !== id) : [...lista, id]));
   }
 
-  function abrirRelatorioMisto() {
-    if (selecionados.length === 0) return;
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.action = `${API_BASE}/baixas/relatorio_misto`;
-    form.target = "_blank";
-    selecionados.forEach((id) => {
-      const input = document.createElement("input");
-      input.type = "hidden";
-      input.name = "ids[]";
-      input.value = id;
-      form.appendChild(input);
-    });
-    document.body.appendChild(form);
-    form.submit();
-    document.body.removeChild(form);
+  async function abrirRelatorioMisto() {
+    if (!selecionados.length) return;
+    try { const { data } = await baixasApi.relatorioMistoBaixas(selecionados); setRelatorio(data); }
+    catch (e) { notificar(mensagemErro(e), 'erro'); }
+  }
+  async function abrirDetalhe(id) {
+    try { const { data } = await baixasApi.detalhesMovimentacao(id); setRelatorio([data]); }
+    catch (e) { notificar(mensagemErro(e), 'erro'); }
   }
 
   return (
@@ -149,16 +144,9 @@ export default function BaixasPage() {
                         checked={selecionados.includes(m.id)}
                         onChange={() => toggleSelecionado(m.id)}
                       />
-                      <a
-                        href={`${API_BASE}/baixas/detalhes/${m.id}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        title="Ver relatório detalhado"
-                      >
-                        <i className="fa-solid fa-file-lines"></i>
-                      </a>
+                      <button className="btn btn-sm btn-outline-info" type="button" onClick={() => abrirDetalhe(m.id)} title="Ver relatório detalhado"><i className="fa-solid fa-file-lines" /></button>
                     </td>
-                    <td>{m.data_mov ? new Date(m.data_mov).toLocaleDateString("pt-BR") : "-"}</td>
+                    <td>{m.data_mov ? dataBr(m.data_mov) : "-"}</td>
                     <td>{m.nome_produto}</td>
                     <td>
                       {m.tipo === "entrada" ? (
@@ -171,13 +159,7 @@ export default function BaixasPage() {
                     <td>R$ {Number(m.valor_unitario).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
                     <td>R$ {Number(m.valor_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
                     <td>
-                      {m.id_baixa && ehAdmin ? (
-                        <a href={`${API_BASE}/lancamentos/relatorio/${m.id_baixa}`} target="_blank" rel="noreferrer">
-                          {m.origem}
-                        </a>
-                      ) : (
-                        m.origem
-                      )}
+                      {m.origem}{m.id_baixa && ehAdmin && <small className="d-block">Baixa #{m.id_baixa}</small>}
                     </td>
                   </tr>
                 ))
@@ -188,6 +170,7 @@ export default function BaixasPage() {
           </table>
         </>
       )}
+      <Relatorio aberto={!!relatorio} onFechar={() => setRelatorio(null)} titulo="Relatório de movimentações">{relatorio && <TabelaMovimentacoes itens={relatorio} />}</Relatorio>
     </div>
   );
 }

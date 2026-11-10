@@ -1,4 +1,4 @@
-export default function Modal({ aberto, onFechar, titulo, children }) {
+export default function Modal({ aberto, onFechar, titulo, children, tamanho = '' }) {
   if (!aberto) return null;
   return (
     <div
@@ -7,7 +7,7 @@ export default function Modal({ aberto, onFechar, titulo, children }) {
       tabIndex="-1"
       onClick={(e) => e.target === e.currentTarget && onFechar()}
     >
-      <div className="modal-dialog modal-dialog-centered">
+      <div className={`modal-dialog modal-dialog-centered ${tamanho}`}>
         <div className="modal-content eletrotech-modal">
           <div className="modal-header">
             <h5 className="modal-title">{titulo}</h5>

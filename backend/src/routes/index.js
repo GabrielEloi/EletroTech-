@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import apiRoutes from '../modules/api.routes.js';
-import { asyncHandler } from '../shared/http.js';
 import { requireAuth } from '../middlewares/auth.js';
 
 const router = Router();

@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
+import FotoOs from "./FotoOs";
+import { useAuth } from "../context/auth-store";
+import { moeda, mensagemErro } from "../lib/formatters";
 import Modal from "./Modal";
 import { Carregando } from "./EstadoLista";
 import * as osApi from "../api/ordensServico";
 import { useNotificacao } from "../context/NotificacaoContext";
 
 const STATUS_BADGE = {
+  bloqueada: <span className="badge bg-danger">Bloqueada</span>,
   solicitada: <span className="badge bg-warning text-dark">Solicitada</span>,
   aberta: <span className="badge bg-success">Aberta</span>,
   fechada: <span className="badge bg-secondary">Fechada</span>,
@@ -12,10 +16,18 @@ const STATUS_BADGE = {
 
 export default function ModalDetalhesOs({ idOs, aberto, onFechar }) {
   const { notificar } = useNotificacao();
+  const { ehAdmin, ehSupervisor } = useAuth();
   const [dados, setDados] = useState(null);
   const [carregando, setCarregando] = useState(true);
   const [comentario, setComentario] = useState("");
   const [enviando, setEnviando] = useState(false);
+  const [foto, setFoto] = useState(null), [edicao, setEdicao] = useState(null);
+  async function salvarEdicao(e) {
+    e.preventDefault(); setEnviando(true);
+    try { await osApi.editarOrdemServico(idOs,edicao); setEdicao(null); carregar(); notificar('OS atualizada.'); }
+    catch (err) { notificar(mensagemErro(err),'erro'); }
+    finally { setEnviando(false); }
+  }
 
   function carregar() {
     if (!idOs) return;
@@ -28,17 +40,17 @@ export default function ModalDetalhesOs({ idOs, aberto, onFechar }) {
   }
 
   useEffect(() => {
-    if (aberto) carregar();
+    if (aberto) { carregar(); setComentario(""); setFoto(null); setEdicao(null); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aberto, idOs]);
 
   async function handleComentario(e) {
     e.preventDefault();
-    if (!comentario.trim()) return;
+    if (!comentario.trim() && !foto) return;
     setEnviando(true);
     try {
-      await osApi.adicionarComentario({ id_os: idOs, comentario });
-      setComentario("");
+      await osApi.adicionarComentario({ id_os: idOs, comentario, foto });
+      setComentario(""); setFoto(null);
       carregar();
     } catch {
       notificar("Erro ao enviar comentário.", "erro");
@@ -54,7 +66,7 @@ export default function ModalDetalhesOs({ idOs, aberto, onFechar }) {
   const comentarios = dados?.comentarios || [];
 
   return (
-    <Modal aberto={aberto} onFechar={onFechar} titulo={`Ordem de Serviço #${idOs ?? ""}`}>
+    <Modal aberto={aberto} onFechar={onFechar} tamanho="modal-lg" titulo={`Ordem de Serviço #${idOs ?? ""}`}>
       {carregando ? (
         <Carregando texto="Carregando detalhes..." />
       ) : !ordem ? (
@@ -72,6 +84,10 @@ export default function ModalDetalhesOs({ idOs, aberto, onFechar }) {
             <div className="mt-2">{STATUS_BADGE[ordem.status] || <span className="badge bg-secondary">—</span>}</div>
           </div>
 
+          <p><strong>Serviço:</strong> {ordem.descricao || 'Sem descrição'}</p><p><strong>Local:</strong> {ordem.local_servico || 'Não informado'}</p><p><strong>Valor do serviço:</strong> {moeda(ordem.valor_servico)}</p>
+          {(ehAdmin || ehSupervisor) && ordem.status !== 'fechada' && <button className="btn btn-sm btn-outline-warning mb-3" onClick={() => setEdicao({ valor_servico: ordem.valor_servico, descricao: ordem.descricao || '', local_servico: ordem.local_servico || '' })}>Editar serviço</button>}
+          {edicao && <form className="eletrotech-form mb-4" onSubmit={salvarEdicao}><label>Descrição</label><textarea maxLength={4000} value={edicao.descricao} onChange={e => setEdicao({ ...edicao, descricao: e.target.value })} /><label>Local</label><input maxLength={255} value={edicao.local_servico} onChange={e => setEdicao({ ...edicao, local_servico: e.target.value })} /><label>Valor do serviço (R$)</label><input required type="number" min="0" step="0.01" value={edicao.valor_servico} onChange={e => setEdicao({ ...edicao, valor_servico: e.target.value })} /><button className="btn-submit" disabled={enviando}>Salvar serviço</button><button type="button" className="btn btn-outline-secondary mt-2" onClick={() => setEdicao(null)}>Cancelar edição</button></form>}
+          {dados.pendencias?.filter(p => p.bloqueado).map(p => <div className="alert alert-warning" key={p.id}>OS bloqueada ({p.origem === 'manual' ? 'bloqueio manual' : `checklist de ${p.tipo}`}). {p.observacao || 'Aguardando revisão da gestão.'}</div>)}
           {ordem.status === "solicitada" ? (
             <p className="text-center" style={{ color: "#a0a0a0" }}>
               Esta OS ainda não foi aberta. Os materiais e o checklist de início são registrados pelo eletricista
@@ -137,6 +153,8 @@ export default function ModalDetalhesOs({ idOs, aberto, onFechar }) {
             <i className="fa-solid fa-comments"></i> Comentários
           </h5>
 
+          {!!dados.fotos?.length && <><h5>Fotos da OS</h5><div className="row">{dados.fotos.map(f => <FotoOs key={f.id} idOs={idOs} foto={f} />)}</div></>}
+          {!!dados.historico?.length && <><h5>Histórico de atividades</h5><ul>{dados.historico.map(h => <li key={h.id}>{h.data_evento} · {h.autor} · {h.acao.replaceAll('_',' ')}{h.observacao ? `: ${h.observacao}` : ''}</li>)}</ul></>}
           <form className="mb-4" onSubmit={handleComentario}>
             <textarea
               className="form-control mb-2"
@@ -146,6 +164,7 @@ export default function ModalDetalhesOs({ idOs, aberto, onFechar }) {
               value={comentario}
               onChange={(e) => setComentario(e.target.value)}
             ></textarea>
+            <label className="d-block mb-2">Foto (opcional, até 8 MB)<input className="form-control" type="file" accept="image/jpeg,image/png,image/gif,image/webp" onChange={e => setFoto(e.target.files[0] || null)} /></label>
             <button type="submit" className="btn btn-sm btn-outline-success" disabled={enviando} style={{ borderRadius: 20, fontWeight: "bold" }}>
               <i className="fa-solid fa-paper-plane"></i> Enviar
             </button>

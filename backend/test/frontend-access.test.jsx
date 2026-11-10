@@ -21,7 +21,7 @@ describe('Interface do eletricista', () => {
   it('exibe apenas Dashboard, Metas, Ordens de Serviço e Sair no menu', () => {
     const html=render(electrician,<Navbar />);
     for(const text of ['Dashboard','Metas','Ordens de Serviço','Sair'])expect(html).toContain(text);
-    for(const text of ['Usuários','Eletricistas','Produtos','Checklist','Movimentação','Baixas'])expect(html).not.toContain(text);
+    for(const text of ['Usuários','Supervisores','Minha equipe','Eletricistas','Produtos','Checklist','Movimentação','Baixas'])expect(html).not.toContain(text);
   });
   it('remove criação de metas, seleção de outros eletricistas e assistente', () => {
     const html=render(electrician,<Layout><MetasPage /></Layout>);
@@ -33,7 +33,7 @@ describe('Interface do eletricista', () => {
   });
   it('mantém a navegação e a criação de metas do administrador', () => {
     const html=render({id:1,is_admin:1,eletricista_id:null,permissoes:[]},<Layout><MetasPage /></Layout>);
-    for(const text of ['Usuários','Eletricistas','Produtos','Nova Meta','Todos os Eletricistas'])expect(html).toContain(text);
+    for(const text of ['Usuários','Supervisores','Eletricistas','Produtos','Nova Meta','Todos os Eletricistas'])expect(html).toContain(text);
   });
   it('interpreta is_admin zero como usuário padrão, inclusive em string', () => {
     expect(render({id:4,is_admin:'0',permissoes:['metas']},<Navbar />)).not.toContain('Usuários');
@@ -45,8 +45,8 @@ describe('Interface do supervisor', () => {
 
   it('mostra os módulos operacionais e bloqueia as telas de gestão de pessoas', () => {
     const html = render(supervisor,<Navbar />);
-    for (const text of ['Dashboard','Ordens de Serviço','Metas','Checklist']) expect(html).toContain(text);
-    for (const text of ['Usuários','Eletricistas','Produtos','Movimentação','Baixas']) expect(html).not.toContain(text);
+    for (const text of ['Dashboard','Minha equipe','Ordens de Serviço','Metas','Checklist']) expect(html).toContain(text);
+    for (const text of ['Usuários','Supervisores','Eletricistas','Produtos','Movimentação','Baixas']) expect(html).not.toContain(text);
     for (const permissao of ['adminOnly','eletricistas']) {
       expect(render(supervisor,<RotaProtegida permissao={permissao}><p>CADASTRO_RESTRITO</p></RotaProtegida>)).not.toContain('CADASTRO_RESTRITO');
     }

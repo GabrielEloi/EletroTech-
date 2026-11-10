@@ -39,6 +39,7 @@ header img {
   display: flex;
   flex-direction: column;
   background-color: white;
+  color: #282828;
   padding: 50px 80px;      
   box-shadow: 5px 4px 3px 0 black;
   border-radius: 10px;
@@ -177,7 +178,7 @@ header img {
   box-shadow: none;
   font-family: inherit;
   font-size: 16px;
-  color: inherit;
+  color: #333;
   transition: border-bottom 0.3s ease;
 }
 
@@ -188,7 +189,15 @@ header img {
 #body-login .container-login .login-inputs .ml-input-wrapper .ml-input-icon {
   position: absolute;
   right: 0;
-  bottom: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  padding: 0;
+  background: transparent;
   cursor: pointer;
   color: #777;
   transition: color 0.3s ease;
@@ -196,4 +205,10 @@ header img {
 
 #body-login .container-login .login-inputs .ml-input-wrapper .ml-input-icon:hover {
   color: #FBD814;
+}
+
+#body-login .container-login .login-inputs .ml-input-wrapper .ml-input-icon:focus-visible {
+  outline: 2px solid #FBD814;
+  outline-offset: 2px;
+  border-radius: 4px;
 }
