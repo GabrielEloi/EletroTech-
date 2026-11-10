@@ -50,6 +50,7 @@ export default function LoginPage() {
             id="login-nome"
             name="nome"
             placeholder="Insira seu nome de usuário ou CPF"
+            autoComplete="username"
             value={nome}
             onChange={(e) => setNome(e.target.value)}
             required
@@ -63,15 +64,21 @@ export default function LoginPage() {
               name="senha"
               className="ml-input-field"
               placeholder="Digite sua senha"
+              autoComplete="current-password"
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
               required
             />
-            <i
-              className={`fa-regular ${mostrarSenha ? "fa-eye-slash" : "fa-eye"} ml-input-icon`}
+            <button
+              type="button"
+              className="ml-input-icon"
+              aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
+              aria-pressed={mostrarSenha}
+              aria-controls="login-senha"
               onClick={() => setMostrarSenha((v) => !v)}
-              style={{ cursor: "pointer" }}
-            ></i>
+            >
+              <i className={`fa-regular ${mostrarSenha ? "fa-eye-slash" : "fa-eye"}`} aria-hidden="true" />
+            </button>
           </div>
 
           <div className="container-button">
