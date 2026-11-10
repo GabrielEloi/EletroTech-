@@ -1,5 +1,7 @@
 > Registro histórico da proposta de migração. Para a implementação atual, consulte [Operação e permissões](operacao-e-permissoes.md), [Endpoints](definicao-de-endpoints.md) e [Camadas atuais](camadas-de-rotas.md).
 
+> O antigo `docs/estrutura-de-pastas.md` foi removido da branch principal. As referências a ele abaixo pertencem à proposta histórica; a estrutura atual está em [Camadas atuais](camadas-de-rotas.md).
+
 # Guia de Backend para IA — EletroTech
 
 ## Objetivo

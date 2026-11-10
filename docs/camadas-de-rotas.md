@@ -51,8 +51,8 @@ transação antes da mudança de estado; a finalização de baixa exige rascunho
 
 `database/schema.sql` inicializa tabelas sem dados pessoais. `db:migrate`
 aplica alterações aditivas e versionadas. O schema real continua MySQL, sem ORM
-ou troca de stack. `docs/estrutura-de-pastas.md` registra a proposta histórica
-mais ampla; a modularização entregue está descrita acima.
+ou troca de stack. A modularização entregue está descrita acima; a proposta
+histórica mais ampla permanece em `guia-backend-para-ia.md`.
 
 Os contratos atuais estão em `definicao-de-endpoints.md`, e as regras de negócio
 em `operacao-e-permissoes.md`.

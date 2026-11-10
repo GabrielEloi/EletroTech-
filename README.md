@@ -14,9 +14,9 @@ preservado. Administrador, supervisor e eletricista usam a mesma tela de login.
 - [Guia do eletricista](ACESSO_ELETRICISTA.md)
 - [Validação e testes](TESTES_UNITARIOS.md)
 
-`docs/estrutura-de-pastas.md` e `docs/guia-backend-para-ia.md` são propostas da
-migração anterior. A implementação atual e seus contratos estão nos documentos
-acima. O Word em `docs` é um modelo acadêmico ainda parcialmente preenchido.
+`docs/guia-backend-para-ia.md` preserva a proposta histórica de migração.
+A implementação atual e seus contratos estão nos documentos acima.
+O Word em `docs` é mantido como documentação acadêmica do projeto.
 
 ## Executar
 
