@@ -19,6 +19,8 @@ import ConsultaChecklistPage from "./pages/ConsultaChecklistPage";
 import BaixasPage from "./pages/BaixasPage";
 import LancamentosPage from "./pages/LancamentosPage";
 
+import { ApiDocs } from './pages/ApiDocs';
+
 function RotaLogin() {
   const { usuario, ehEletricista } = useAuth();
   if (usuario) return <Navigate to={ehEletricista ? "/menu" : "/home"} replace />;
@@ -32,7 +34,7 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<RotaLogin />} />
-
+            <Route path="/docs" element={<ApiDocs />} />
             <Route path="/home" element={<RotaProtegida><HomePage /></RotaProtegida>} />
             <Route path="/menu" element={<RotaProtegida permissao="menu"><MenuPage /></RotaProtegida>} />
             <Route path="/usuarios" element={<RotaProtegida permissao="adminOnly"><UsuariosPage /></RotaProtegida>} />
